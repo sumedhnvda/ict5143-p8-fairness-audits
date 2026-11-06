@@ -1,0 +1,26 @@
+# restricted / large data: download locally, never commit
+data/*
+!data/README.md
+# environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.DS_Store
+# LaTeX intermediates
+*.aux
+*.log
+*.out
+*.toc
+*.nav
+*.snm
+*.vrb
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+# course-provided templates and personal study material (not our work)
+eval/
+# credentials
+.env
+*.key

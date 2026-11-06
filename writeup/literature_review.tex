@@ -1,0 +1,188 @@
+\documentclass[10pt]{article}
+\input{preamble}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+
+\title{Literature Review and Research Positioning\\[2pt]\large ICT 5143 Capstone, Problem 8: reliable intersectional fairness audits for sparse public-coverage groups}
+\author{\Authors}
+\date{Version 1.0 \textperiodcentered{} \nbDate}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We review 19 papers on intersectional and subgroup fairness, estimating fairness metrics for small groups, statistical
+inference for audits, generalisation of fairness constraints, benchmark data and labels, and robust hierarchical shrinkage.
+The review answers the handout's gap-verification questions. Hierarchical Bayesian estimation of intersectional fairness
+already exists (Foulds et al.~\cite{foulds2020bayes}), as does attribute-structured estimation for small subgroups
+(Herlihy et al.~\cite{herlihy2024}). Contamination and heavy-tailed priors that let outlying units escape shrinkage are
+classical (Berger and Berliner~\cite{berger1986}; Datta and Lahiri~\cite{datta1995}). We therefore narrow the
+contribution to an \emph{evaluation}: when Bayesian pooling produces false ``$\Delta\text{EOpp}\le\epsilon$'' conclusions
+for sparse intersections, including validation-time rule selection. We state it as one falsifiable sentence (H1) and
+test it out of sample.
+\end{abstract}
+
+\section{Search method}
+We searched arXiv, the ACM Digital Library (FAccT), PMLR (ICML, AISTATS), the NeurIPS and IJCAI proceedings, SIAM (SDM),
+Project Euclid and journal sites. Search terms combined \emph{intersectional fairness}, \emph{subgroup fairness},
+\emph{small groups}, \emph{Bayesian}, \emph{hierarchical}, \emph{shrinkage}, \emph{fairness audit},
+\emph{uncertainty}, \emph{contamination prior} and \emph{robust small area estimation}. We started from the references
+in the handout (Foulds et al., Kearns et al., Ding et al., Folktables) and followed citations. A paper was included if it
+(i) defines intersectional or subgroup fairness, (ii) estimates or tests fairness metrics under small group sizes,
+(iii) studies whether fairness guarantees generalise, (iv) supplies our data or label caveats, or (v) supplies the
+shrinkage method we modify. Every bibliographic entry was checked against its published abstract or proceedings page.
+For several papers only the abstract was available to us. The table therefore records only what the abstract states and
+marks other details ``not stated in abstract''. This is a limitation of the review: rows built from abstracts may omit assumptions stated only in the
+full text. The closest papers (\S\ref{sec:closest}) are the ones whose full text matters most.
+
+\section{Thematic review}
+\subsection{Intersectional and subgroup fairness definitions}
+Kearns et al.~\cite{kearns2018} show that fairness over a few pre-defined groups can hide unfairness to structured
+subgroups (``fairness gerrymandering''). They prove that auditing subgroup fairness is computationally equivalent to weak
+agnostic learning, and they give a learner--auditor game. H\'ebert-Johnson et al.~\cite{hebert2018} require calibration on
+every computationally identifiable subpopulation (multicalibration). Foulds et al.~\cite{foulds2020icde} propose
+\emph{differential fairness}, an intersectional definition motivated by differential privacy. Molina and
+Loiseau~\cite{molina2022} characterise when marginal fairness bounds intersectional fairness, and report that the bounds
+are loose in practice. Wang et al.~\cite{wang2022} discuss which identities to include, how to handle shrinking
+subgroups, and how to evaluate more subgroups, with experiments on US Census tabular data. Gohar and Cheng~\cite{gohar2023}
+survey intersectional notions and mitigation. \emph{Relevance:} our Experiment~1 (single attribute vs intersectional) and
+our interaction-only semi-synthetic world are instances of the phenomenon these papers establish. They are not new.
+
+\subsection{Estimating fairness metrics for small groups}
+Foulds et al.~\cite{foulds2020bayes}, the reference the handout names as establishing the gap, show that intersectional
+fairness measurement becomes unreliable as data become sparse. They propose Bayesian models with different bias--variance
+trade-offs, including a new hierarchical Bayesian logistic regression, and Bayesian model averaging, evaluated on criminal
+justice, census and synthetic data. Ji et al.~\cite{ji2020} estimate group fairness metrics with a hierarchical Bayesian
+calibration model that also uses unlabeled data, and report lower estimation error. Morina et al.~\cite{morina2019} extend
+single-attribute metrics to intersections and describe estimation when subgroups have little data. Lum et
+al.~\cite{lum2022} show that naive between-group disparity estimates are statistically biased and propose a
+``double-corrected'' variance estimator. After correction, apparent disparities were no longer significant. Herlihy et
+al.~\cite{herlihy2024} use structured regression to obtain reliable performance estimates and confidence intervals for
+very small intersectional subgroups, with goodness-of-fit tests that reveal the structure of harms. Himmelreich et
+al.~\cite{himmelreich2025} argue that the intersectionality problem is one of statistical uncertainty due to small data,
+and sketch a hypothesis-testing proposal. \emph{Relevance:} uncertainty-aware intersectional estimation, Bayesian or
+structured, is established. The upward bias of raw max$-$min gaps that we see in simulation agrees with Lum et al.
+
+\subsection{Statistical inference for fairness audits}
+Cherian and Cand\`es~\cite{cherian2024} cast auditing as multiple hypothesis testing and use the bootstrap to bound
+performance gaps over many subgroups at once, with guarantees, either flagging or certifying subgroups. \emph{Relevance:}
+this is the frequentist counterpart of certifying ``$\Delta\le\epsilon$''. We do not reproduce it (see limitations).
+
+\subsection{Fairness criteria and generalisation of fairness guarantees}
+Hardt et al.~\cite{hardt2016} define equality of opportunity and give post-processing threshold adjustment. Our
+$\lambda=1$ rule is the ordinary opportunity-constrained baseline. Cotter et al.~\cite{cotter2019} show that
+data-dependent fairness constraints satisfied during training need not hold at evaluation, and they enforce constraints on
+a separate validation set. \emph{Relevance:} the general failure of fairness constraints to transfer is known. Our
+narrower question is whether \emph{pooled Bayesian audit criteria} make validation-time tolerance claims that fail on
+independent test data, and whether they do so more often than raw or independent criteria.
+
+\subsection{Benchmark data and label validity}
+Ding et al.~\cite{ding2021} build the Folktables prediction tasks from US Census data across years and states. We use
+the ACSPublicCoverage task through the Folktables package~\cite{folktables}. Fogliato et al.~\cite{fogliato2020} show
+that small group-dependent label biases can overturn fairness conclusions. \emph{Relevance:} our label is
+\emph{absence of public coverage}, not uninsurance; label noise is listed as an untested assumption (D2 in the register).
+
+\subsection{Robust hierarchical shrinkage}
+Berger and Berliner~\cite{berger1986} study $\epsilon$-contaminated prior classes and type-II maximum-likelihood
+(empirical-Bayes) selection of a prior from the class. Datta and Lahiri~\cite{datta1995} note that normal-prior Bayes
+estimators perform poorly with even one extreme small area, and use scale mixtures of normals (e.g.\ Cauchy for outlying
+areas) for robust hierarchical Bayes small-area estimation. \emph{Relevance:} letting an atypical group escape shrinkage
+through a contamination or heavy-tailed prior is classical. \textbf{Our contamination prior is an application of this
+idea, not a new method.}
+
+\section{Comparison table}
+Table~\ref{tab:comparison} compares the papers on the six dimensions required by the handout.
+
+\begin{landscape}
+\footnotesize
+\begin{longtable}{@{}L{2.9cm}L{3.2cm}L{2.5cm}L{3.3cm}L{2.8cm}L{2.9cm}L{3.6cm}@{}}
+\caption{Comparison of related work. ``n.s.'' = not stated in the abstract we verified.}\label{tab:comparison}\\
+\toprule
+Paper & Key assumptions & Data & Graphical / statistical model & Fairness definition & Inference & Limitation for our question \\
+\midrule\endfirsthead
+\toprule
+Paper & Key assumptions & Data & Graphical / statistical model & Fairness definition & Inference & Limitation for our question \\
+\midrule\endhead
+\bottomrule\endfoot
+Foulds et al.\ 2020 (SDM)~\cite{foulds2020bayes} & Sparse intersections can borrow strength through a probabilistic model & Criminal justice, census, synthetic & Four Bayesian models incl.\ hierarchical Bayesian logistic regression; model averaging & Intersectional fairness (differential fairness~\cite{foulds2020icde}) & Bayesian posterior; n.s.\ beyond that & Outcome-rate fairness, not TPR-based EOpp; masking of an exceptional group and validation-time selection not studied (n.s.) \\
+Foulds et al.\ 2020 (ICDE)~\cite{foulds2020icde} & Protected attributes known; a privacy-style ratio bound is a meaningful fairness notion & COMPAS, census & -- & Differential fairness ($\epsilon$-DF) & Learning algorithm satisfying DF & Definition paper; no small-group uncertainty study \\
+Kearns et al.\ 2018~\cite{kearns2018} & Subgroups from a structured function class & n.s.\ (primarily theory) & -- & Subgroup fairness over rich classes & Learner--auditor zero-sum game; agnostic-learning oracle & Auditing is hard in the worst case; finite-sample small-group estimation not the focus \\
+H\'ebert-Johnson et al.\ 2018~\cite{hebert2018} & Subpopulations computationally identifiable & n.s.\ (theory) & -- & Multicalibration & Algorithms with complexity analysis & Calibration criterion, not EOpp tolerance audits \\
+Molina \& Loiseau 2022~\cite{molina2022} & Relations between marginal and intersectional fairness & n.s. & -- & Intersectional vs marginal fairness & High-probability bounds; grouping heuristic & Bounds loose in practice (authors) \\
+Wang et al.\ 2022~\cite{wang2022} & Including more identities creates small subgroups & US Census tabular & -- & New intersectional evaluation metrics & Empirical & Pipeline guidance; no Bayesian audit calibration \\
+Gohar \& Cheng 2023~\cite{gohar2023} & -- (survey) & -- & -- & Taxonomy of intersectional notions & -- & Survey \\
+Ji et al.\ 2020~\cite{ji2020} & Many unlabeled, few labeled examples; scores calibratable per group & Several fairness datasets & Hierarchical latent-variable calibration model & Several group metrics & Bayesian posterior & Groups, not sparse intersections; no tolerance-decision error rates \\
+Morina et al.\ 2019~\cite{morina2019} & Single-attribute metrics extend to intersections & One real dataset & n.s. & Intersectional extensions of standard metrics & Estimation for small subgroups (n.s.); post-processing & No pooling-masking analysis \\
+Lum et al.\ 2022~\cite{lum2022} & Group metrics carry sampling noise & Simulation and one real dataset & Variance decomposition (frequentist) & Variance of performance across groups & Double-corrected variance estimator & Summary of spread; not max$-$min tolerance certification \\
+Herlihy et al.\ 2024~\cite{herlihy2024} & Subgroup performance has regression structure in group features & Two public datasets, semi-synthetic variants & Structured regression & Subgroup performance metrics & Confidence intervals; goodness-of-fit tests & Closest structured method; false-tolerance rates under an isolated interaction n.s. \\
+Himmelreich et al.\ 2025~\cite{himmelreich2025} & Intersectional problem = statistical uncertainty & Partly empirical & -- & Desiderata for intersectional fairness & Simple hypothesis testing (sketch) & Conceptual; no calibrated procedure \\
+Cherian \& Cand\`es 2024~\cite{cherian2024} & Model-agnostic; bootstrap validity & Benchmark datasets & -- & Any metric / group criterion & Simultaneous bootstrap bounds (multiple testing) & Frequentist; does not compare Bayesian pooling \\
+Hardt et al.\ 2016~\cite{hardt2016} & Group-conditional rates estimable & n.s. & -- & Equal opportunity; equalised odds & Post-processing threshold adjustment & Small-group estimation error not addressed \\
+Cotter et al.\ 2019~\cite{cotter2019} & Constraints can be enforced on held-out data & n.s. & -- & Data-dependent fairness constraints & Two-player constrained optimisation & Training-time generalisation, not audit claims \\
+Ding et al.\ 2021~\cite{ding2021} & Census-derived tasks represent the population & ACS PUMS, all states, multiple years & -- & (benchmark) & -- & Dataset; ours uses its ACSPublicCoverage task \\
+Fogliato et al.\ 2020~\cite{fogliato2020} & Observed label is a noisy proxy & Two criminal justice datasets & Sensitivity-analysis framework & Predictive bias & Sensitivity analysis & Different domain; motivates label caveat \\
+Berger \& Berliner 1986~\cite{berger1986} & Base prior plus $\epsilon$-contamination class & -- (theory) & $\epsilon$-contaminated priors & -- & Posterior ranges; type-II ML & Not about fairness \\
+Datta \& Lahiri 1995~\cite{datta1995} & Some small areas are outliers & n.s. & Hierarchical Bayes with scale-mixture-of-normal priors & -- & Robust hierarchical Bayes & Not about fairness or tolerance claims \\
+\midrule
+\textbf{This project} & Exchangeable or attribute-structured pooling of TPRs; binomial counts & ACS PUMS 2018 CA (core), TX (replication) & Discrete BN (predictor); beta-binomial, hierarchical logistic, contamination audit models & Intersectional EOpp (primary), DP (secondary) & VE / clique-tree; EB, grid full Bayes, quadrature; simulation calibration & EB plug-in under-covers; calibration design-specific; struct not an exact reproduction of~\cite{foulds2020bayes} \\
+\end{longtable}
+\end{landscape}
+
+\section{Closest existing method and baseline reproduction}\label{sec:closest}
+The closest methods are the hierarchical Bayesian logistic regression of Foulds et al.~\cite{foulds2020bayes} and the
+structured regression of Herlihy et al.~\cite{herlihy2024}. Both let a small intersection borrow strength through its
+attributes. As the handout allows, we reproduce a \emph{clearly documented restricted version} (\texttt{struct}, notebook
+\S6):
+\[
+\operatorname{logit}\theta_g=\beta_0+\beta_{\text{race}[g]}+\beta_{\text{sex}[g]}+\beta_{\text{dis}[g]}+u_g,\qquad
+u_g\sim N(0,\tau^2),\qquad k_g\sim\text{Bin}(n_g,\theta_g),
+\]
+applied to true-positive rates. $\beta$ and $\tau$ are fitted by marginal likelihood (adaptive quadrature), and $u_g$ is
+drawn from its grid posterior. Differences from Foulds et al.\ as far as we could verify: we model TPRs among positives
+rather than outcome rates; we use only main effects; we plug in empirical-Bayes hyperparameters; and we did not match their
+priors, covariates or inference algorithm. Exact reproduction is therefore \textbf{not} claimed.
+An exact reproduction (their code, priors and sampler on our counts) was not attempted and remains future work.
+The quadrature is checked against brute-force integration ($10^{-10}$). Under its own generative model, its 90\% intervals
+cover 0.665, against 0.905 for the same sampler with the true hyperparameters (notebook \S6.1).
+
+\section{Gap verification and narrowing of the claim}
+\begin{tabularx}{\textwidth}{@{}L{4.6cm}X@{}}
+\toprule
+Candidate gap (handout) & What the literature already answers, and what remains \\
+\midrule
+Hierarchical Bayesian intersectional estimation & Established~\cite{foulds2020bayes,ji2020,herlihy2024}. Not claimed. \\
+Small groups make fairness metrics unreliable & Established~\cite{foulds2020bayes,lum2022,himmelreich2025}. Not claimed. \\
+Marginal audits can miss intersectional harm & Established~\cite{kearns2018,molina2022}. Reported as a replication on our data (Exp.~1). \\
+A prior that lets atypical groups escape shrinkage & Classical in robust and small-area Bayes~\cite{berger1986,datta1995}. Claimed only as an \emph{application}, evaluated as an audit safeguard. We found no application to fairness audits; this search is not exhaustive. \\
+Fairness guarantees may not generalise from training to test & Established for training constraints~\cite{cotter2019}. \textbf{Remaining:} whether \emph{pooled audit criteria} produce validation-time tolerance claims that fail on test (H1), and how this compares with raw and independent criteria. \\
+Pooling masks a small exceptional group; quantile rules as a fix; calibrating a tolerance procedure & Not answered in the papers we reviewed. We add a diagnosis and a tested fix (design-matched calibration, held-out certification). \textbf{Remaining:} a controlled evaluation of false-tolerance rates by deficit structure (cell, interaction-only, main effect), thinning and design, and whether a simulation calibration transfers to the deployment design. \\
+\bottomrule
+\end{tabularx}
+
+\medskip
+\noindent\textbf{Narrowed contribution.} A controlled and real-data evaluation of when Bayesian pooling, exchangeable and
+attribute-structured, produces false ``$\Delta\text{EOpp}\le\epsilon$'' conclusions for sparse intersections. It covers
+minority thinning, interaction-only and main-effect deficits, validation-time rule selection, and the transfer of a
+simulation-calibrated robust-prior procedure between designs.
+
+\section{Falsifiable contribution}
+\textbf{H1.} \emph{When the group-threshold rule's $\lambda$ is selected on validation data and a pooled Bayesian audit
+criterion (hierarchical, full-Bayes, complete, attribute-structured or contamination pooling) reports intersectional
+$\Delta\text{EOpp}\le0.10$, the frozen rule's empirical test $\Delta\text{EOpp}$ exceeds 0.10 in more than half of those cases.}
+
+H1 was formed from the California results and tested out of sample on Texas 2018 (notebook \S14.1), with the decision
+rule fixed before the test was run.
+\input{tables/h1_verdict}
+
+\noindent\textbf{Methodological contribution and its test (H2).} The review found no application of robust priors to
+fairness audits and no study of calibration transfer between audit designs. We therefore propose \emph{design-matched
+calibration} plus \emph{held-out certification} (notebook \S15) and test it with preregistered hypotheses on the Texas
+design. Its audit score $J=\text{ACC}-\text{FTS}$ is 0.664, against at most 0.385 for every established audit (H2a
+supported) and 0.189 for the invented-design calibration (H2b supported). Held-out certification produced no false
+tolerance claims on real CA or TX data, against 10 of 10 with same-data certification (H2c supported).
+
+\noindent\textbf{Earlier draft claim.} The draft claim ``an $\epsilon$-contamination prior reduces the false-satisfaction
+rate of an empirical-Bayes upper-quantile audit by at least half'' is not supported for the calibrated procedure
+(0.980 $\to$ 0.503; the required value is $\le0.490$).
+
+\input{references}
+\end{document}

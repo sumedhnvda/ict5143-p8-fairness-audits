@@ -1,0 +1,349 @@
+\documentclass[11pt]{article}
+\input{preamble}
+\geometry{margin=2.3cm}
+\linespread{1.0}
+\usepackage{subcaption}
+
+\title{When Does Pooling Make Intersectional Fairness Audits Falsely Reassuring?\\[3pt]
+\large Bayesian audits of sparse race $\times$ sex $\times$ disability groups in ACSPublicCoverage}
+\author{\Authors\\ \small \texttt{\Contact} \quad \url{\RepoURL}\\ \small ICT 5143 Algorithms, Fairness and Graphical Models Laboratory --- Capstone, Problem 8}
+\date{\nbDate}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Aggregate fairness audits can hide disparities at intersections of protected attributes. Intersections are often too
+small for raw estimates, and hierarchical Bayesian pooling is the established remedy. We ask when such pooling makes an
+audit \emph{falsely reassuring}, i.e.\ when it concludes that an equality-of-opportunity tolerance
+$\Delta\text{EOpp}\le\epsilon$ holds when it does not. We use ACSPublicCoverage (California 2018; \Nall{} people), a
+compact Bayesian-network predictor with exact inference, and a hypothetical outreach decision at 30\% capacity. We
+compare raw, independent, exchangeable (empirical-Bayes and full-Bayes beta-binomial), attribute-structured (hierarchical
+logistic) and $\epsilon$-contamination audits in synthetic, semi-synthetic and real experiments. Exchangeable pooling
+declares a 0.20 deficit in a 24-positive intersection ``fair'' in 98--100\% of semi-synthetic worlds, and an
+upper-posterior-quantile rule does not fix this. Attribute-structured pooling masks the same deficit when it is an
+interaction. On real data, every one of 116 validation-time tolerance claims made by pooled criteria fails on an
+independent household-disjoint test split (test $\Delta$EOpp 0.23--0.77). A contamination procedure calibrated on an invented design
+lowers false claims, but its acceptance of truly fair worlds falls from 0.83 to 0.32 on the real design. We trace this to
+groups with fewer than 10 positives and propose two fixes: \emph{design-matched calibration} on the deployment
+population's own validation group sizes, and \emph{held-out certification}. In a preregistered out-of-sample test on
+Texas 2018, the design-matched audit scores $J=\text{ACC}-\text{FTS}=0.664$, against at most 0.385 for every established
+audit, at a false-certification rate of 0.168 (vs 0.615--0.661 for hierarchical pooling). Held-out certification removes
+all validation-time false certificates (10 of 10 same-data claims were false; held-out certification made none). Our falsifiable claim (H1), that pooled validation-time tolerance claims fail on test more than half the time, is supported out of sample on Texas 2018 (27 of 27 claims failed).
+\end{abstract}
+
+\section{Introduction}
+Fairness audits usually report one gap per protected attribute. Disadvantage, however, often concentrates at
+intersections~\cite{kearns2018,wang2022}. Intersections of race, sex and disability are numerous and small, so raw
+estimates of group true-positive rates (TPRs) are noisy and the max$-$min gap is biased upward~\cite{lum2022}.
+Hierarchical Bayesian models stabilise such estimates by partial pooling~\cite{foulds2020bayes,ji2020,herlihy2024}.
+Pooling, however, pulls a small group toward the majority. If that group is the one that is actually disadvantaged, the
+audit may certify fairness that does not exist.
+
+\paragraph{Research questions.} \textbf{RQ1:} When does hierarchical pooling improve intersectional fairness
+assessment, and when does it mask a harmful small-group disparity? \textbf{RQ2:} How do pooling strength and group size
+affect interval coverage? \textbf{RQ3:} Can posterior uncertainty (an upper posterior quantile) improve validation-time
+threshold selection? \textbf{RQ4:} Are conclusions stable across splits and populations?
+
+\paragraph{Contributions.} The literature already establishes hierarchical intersectional estimation, small-group
+unreliability, marginal-vs-intersectional gaps and contamination priors (Section~\ref{sec:related}). We therefore claim
+an \emph{evaluation}, not a new estimator:
+(i) a controlled comparison of false tolerance-satisfaction rates (FTS) for six audit families, under minority thinning
+and three deficit structures, on both an invented and the real intersection design;
+(ii) evidence that pooled audit criteria used for validation-time rule selection make tolerance claims that fail on
+independent data;
+(iii) a diagnosis of why a simulation-calibrated robust-prior procedure fails to transfer between designs, and a fix,
+\emph{design-matched calibration plus held-out certification}, tested out of sample with preregistered hypotheses
+(H2a--c); and
+(iv) an out-of-sample test, on a second state, of the falsifiable claim
+
+\begin{quote}\textbf{H1.} \emph{When the group-threshold rule's $\lambda$ is selected on validation data and a pooled
+Bayesian audit criterion reports intersectional $\Delta\text{EOpp}\le0.10$, the frozen rule's empirical test
+$\Delta\text{EOpp}$ exceeds 0.10 in more than half of those cases.}\end{quote}
+
+\section{Related work}\label{sec:related}
+\emph{Intersectional definitions.} Subgroup fairness over rich classes~\cite{kearns2018}, multicalibration~\cite{hebert2018}
+and differential fairness~\cite{foulds2020icde} formalise intersectional fairness. Marginal fairness does not in general
+imply intersectional fairness~\cite{molina2022}; a survey is given in~\cite{gohar2023}.
+\emph{Small-group estimation.} Foulds et al.~\cite{foulds2020bayes} introduce Bayesian models, including a hierarchical
+Bayesian logistic regression, for sparse intersections. Ji et al.~\cite{ji2020} estimate fairness metrics with a
+hierarchical Bayesian calibration model. Herlihy et al.~\cite{herlihy2024} use structured regression with confidence
+intervals for very small subgroups. Lum et al.~\cite{lum2022} show that naive disparity estimates are biased.
+Himmelreich et al.~\cite{himmelreich2025} frame intersectionality as a problem of statistical uncertainty. Morina et
+al.~\cite{morina2019} extend audit metrics to intersections.
+\emph{Inference and generalisation.} Cherian and Cand\`es~\cite{cherian2024} give simultaneous bootstrap bounds for
+subgroup audits. Cotter et al.~\cite{cotter2019} show that fairness constraints may not generalise and enforce them on
+validation data. Hardt et al.~\cite{hardt2016} define equality of opportunity and threshold post-processing.
+\emph{Robust shrinkage.} $\epsilon$-contaminated priors~\cite{berger1986} and heavy-tailed hierarchical priors for outlying
+small areas~\cite{datta1995} are classical.
+\emph{Data and labels.} We use Folktables~\cite{ding2021,folktables}; label noise can overturn fairness
+conclusions~\cite{fogliato2020}. The full review, with a comparison table of 19 papers, is in the companion document
+\texttt{literature\_review.pdf}.
+
+\section{Data, decision and metrics}
+\textbf{Data.} ACS PUMS 2018 1-Year, California, through Folktables' \texttt{ACSPublicCoverage} task (AGEP $<65$, PINCP
+$\le30{,}000$): \Nall{} people in \Nhh{} households, 19 features identical to Folktables' output. The label is
+$Y=1-\mathbb 1[\text{PUBCOV}=1]$ (prevalence \prev): $Y=1$ means \emph{no public coverage}, which is neither uninsurance
+nor eligibility. Protected attributes are RAC1P (nine codes, not collapsed), SEX and DIS, giving 36 intersections. Splits
+are household-disjoint 60/20/20 on SERIALNO with five seeds. Texas 2018 (98,928 people) is a replication population.
+
+\textbf{Decision.} $D=1$ selects a person for \emph{hypothetical} information outreach, at a fixed capacity of 30\%.
+The rule family is $t_g(\lambda)=(1-\lambda)t_{\text{global}}+\lambda t_g^{\text{EOpp}}+c$, with $c$ chosen so that exactly
+30\% of validation records are selected. $\lambda=0$ is group-unaware; $\lambda=1$ is ordinary opportunity-constrained
+threshold adjustment~\cite{hardt2016}.
+
+\textbf{Metrics (preregistered).} The primary fairness metric is intersectional
+$\Delta\text{EOpp}=\max_g t_g-\min_g t_g$ over groups with $\ge30$ positives, with tolerance $\epsilon=0.10$ (robustness
+0.05 and 0.15). The primary predictive metric is recall at capacity, with an acceptable utility loss of 0.02. $\Delta$DP,
+$\Delta$EOdds, $R_{\text{sel}}$, worst-group recall, AUROC, AP, log loss, Brier score and group calibration are
+diagnostics. In simulation we report FTS $=P(\text{declared fair}\mid\text{truly unfair})$, ACC
+$=P(\text{declared fair}\mid\text{truly fair})$, and the coverage and width of central 90\% intervals.
+
+\section{Methods}
+\subsection{Predictive Bayesian network and exact inference}
+The predictor is a discrete augmented naive-Bayes network: $Y$ is a parent of all 18 features, plus edges such as
+PINCP$\mid$ESR and \{DEAR, DEYE, DREM\}$\mid$DIS (Figure~\ref{fig:models}a). CPTs are Dirichlet-smoothed ($\alpha=1$) and
+$P(Y\mid x)$ is computed by variable elimination. Across 200 random evidence masks, our VE under two elimination orders,
+pgmpy VE, pgmpy clique-tree belief propagation and enumeration agree to $3.3\times10^{-16}$. The joint conditional
+independence $\text{SEX}\perp\{\text{AGEP},\text{DIS}\}\mid Y$ implied by d-separation holds in the fitted model. The
+graph is associational. Logistic regression and gradient-boosted trees are predictive baselines.
+
+\begin{figure}[t]\centering
+\begin{subfigure}{0.5\textwidth}\includegraphics[width=\linewidth]{bn_structure.png}\caption{Predictive BN}\end{subfigure}\hfill
+\begin{subfigure}{0.47\textwidth}\includegraphics[width=\linewidth]{audit_model_structure.png}\caption{Contamination audit model}\end{subfigure}
+\caption{Graphical models. (a) Associational predictor. (b) Audit model with a plate over intersections; hierarchical
+EB is the special case $\pi=1$.}\label{fig:models}
+\end{figure}
+
+\subsection{Audit models}
+For a frozen rule, let $n_g$ be the positives in intersection $g$ and $k_g$ the selected positives, with
+$k_g\sim\text{Bin}(n_g,\theta_g)$ and $\theta_g$ the TPR. We compare:
+\emph{raw} $k_g/n_g$;
+\emph{independent} $\theta_g\sim\text{Beta}(1,1)$ (no pooling);
+\emph{complete} pooling (one shared $\theta$);
+\emph{hier}, $\theta_g\sim\text{Beta}(a,b)$ with $(a,b)$ fitted by beta-binomial marginal likelihood;
+\emph{fullbayes}, $\text{Beta}(\mu\kappa,(1-\mu)\kappa)$ with $\mu\sim U(0,1)$, $p(\kappa)\propto(1+\kappa)^{-2}$, on a grid;
+\emph{struct}, the attribute-structured hierarchical logistic audit
+$\operatorname{logit}\theta_g=\beta_0+\beta_{\text{race}}+\beta_{\text{sex}}+\beta_{\text{dis}}+u_g$,
+$u_g\sim N(0,\tau^2)$, with $(\beta,\tau)$ fitted by marginal likelihood using 201-node adaptive quadrature (a restricted
+version in the spirit of~\cite{foulds2020bayes}, not an exact reproduction); and
+\emph{contamination}, $\theta_g\sim\pi\,\text{Beta}(a,b)+(1-\pi)\,\text{Beta}(1,1)$ with $\pi\le\pi_{\max}$~\cite{berger1986}.
+Under the contamination prior the posterior is a two-component Beta mixture, so a group whose counts are implausible
+under the shared Beta keeps its own estimate. A \emph{plug-in} rule declares fairness if the max$-$min of the posterior
+means is $\le\epsilon$. An \emph{upper-$q$} rule declares fairness if the $q$-quantile of the posterior of
+$\max_g\theta_g-\min_g\theta_g$ is $\le\epsilon$, equivalently $P(\Delta>\epsilon\mid\text{data})\le1-q$.
+
+\subsection{Calibrating the tolerance procedure}
+Before any real-data selection, we chose the audit procedure on synthetic data with a preregistered rule: maximise
+Youden's $J=\text{ACC}-\text{FTS}$ over (estimator, rule) pairs. The synthetic design has 16 intersections with
+4000 down to 8 positives, homogeneous TPRs $0.65\pm0.015$, and in the unfair worlds one 20-positive group 0.20 lower,
+with $R=300$ replicates. The chosen procedure is then frozen.
+
+\subsection{Experiments}
+\textbf{E1} compares single-attribute, two-attribute and intersectional audits.
+\textbf{E2} thins three disabled minority intersections in training and validation to 50, 25 and 10\% while keeping the
+test split intact.
+\textbf{E3} compares raw, independent and pooled estimates on real counts.
+\textbf{E4} simulates homogeneous and exceptional worlds on the synthetic design and, \emph{semi-synthetically}, on the real
+seed-0 validation design (32 intersections, 1 to 5,499 positives). The deficit sits at Black, female, disabled
+(\texttt{2|2|1}, 24 positives), thinned to 100, 50 and 25\%, and takes three forms: an isolated \emph{cell}; a pure
+\emph{interaction}, in which the other 31 groups are shifted so that every race, sex and disability margin is exactly
+equal; and a \emph{disability main effect}.
+\textbf{E5} selects $\lambda$ on validation with each criterion (raw, independent, complete, hier, fullbayes, struct and
+contamination; plug-in and upper rules) and audits the frozen rule on test, with capacity matched.
+Ablations remove pooling, use complete pooling, and replace the upper quantile by the posterior mean. Robustness tests vary
+priors and $\pi_{\max}$, base TPR, $\epsilon$, effect size and thinning, and add survey weights and Texas.
+\textbf{Statistics.} Evaluation uncertainty comes from 1,000 household-cluster bootstrap replicates of the seed-0 test
+split. Training uncertainty comes from 5 refits. The confirmatory family (Holm) is the calibrated procedure vs hier
+plug-in and vs raw plug-in, on test $\Delta$EOpp. Everything else is exploratory.
+
+\section{Results}
+\subsection{Intersectional audits reveal what single attributes hide (E1)}
+Predictive accuracy is moderate: BN AUROC $0.729\pm0.004$, LR $0.716\pm0.004$, GBT $0.768\pm0.003$
+(Table~\ref{tab:pred}). For the unconstrained BN rule, $\Delta$EOpp is 0.162 by sex, 0.384 by disability, 0.468 for
+sex$\times$disability and \textbf{0.746 intersectionally} (21 of 35 groups adequate; Table~\ref{tab:exp1}). Every disabled
+intersection has a TPR of at most 0.08. Disabled low-income adults mostly do have public coverage, so the minority of them
+without it is ranked low. Survey weighting confirms this (weighted TPR 0.011 and 0.031 for disabled men and women, against
+0.280 and 0.448 without a disability). Texas replicates the pattern (0.094 by sex; 0.888 intersectionally).
+
+\begin{table}[t]\centering\small
+\caption{Test metrics of the unconstrained top-30\% rule (mean $\pm$ sd over 5 household splits).}\label{tab:pred}
+\input{tables/predictive}
+\end{table}
+\begin{table}[t]\centering\small
+\caption{Single-attribute vs intersectional audit (seed-0 test split, unconstrained rule).}\label{tab:exp1}
+\resizebox{\textwidth}{!}{\input{tables/exp1}}
+\end{table}
+
+\subsection{Pooling on real counts (E3)}
+On real counts the exchangeable estimators move only groups with 1--7 positives (pull 0.05--0.14), and no group with
+$\ge30$ positives moves by more than 0.032 (Figure~\ref{fig:pull}). The TPRs are bimodal by disability, so the shared Beta
+is diffuse. The struct model fits $\hat\tau=0.01$ (its lower bound), so it becomes a main-effects model with an implausibly
+narrow gap interval, (0.750, 0.757). Every audit gives $P(\Delta\text{EOpp}>0.10\mid\text{data})=1.0$, so here pooling neither
+hides the disparity nor needs correcting.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.66\textwidth]{real_pooling_pull.png}
+\caption{Raw and pooled TPR estimates by intersection size (BN, seed 0, test).}\label{fig:pull}
+\end{figure}
+
+\subsection{Pooling masks a small exception; quantile rules do not fix it (E4, SYNTHETIC)}
+Table~\ref{tab:sim} and Figure~\ref{fig:frontiers}a summarise the synthetic study. Empirical-Bayes pooling declares the
+unfair worlds fair in 100\% (plug-in) and 98\% (upper 0.9) of replicates, because shrinkage moves the exceptional group's
+posterior location, not just its interval width. Full Bayes with the upper 0.9 rule lowers FTS to 0.31, but accepts only
+43\% of fair worlds. Raw and independent audits never certify (ACC $\le0.007$). No configuration achieves FTS $<0.10$
+with ACC $>0.5$. The preregistered calibration selected the contamination prior with $\pi_{\max}=0.8$ and the
+\emph{plug-in} rule (FTS 0.503, ACC 0.830, $J=0.327$). The best upper-quantile rule ($J=0.323$) is within Monte Carlo
+error, so for RQ3 posterior quantiles did not improve the calibrated choice. Coverage of the 90\% gap interval is 0.000 for
+hier and 0.038 for full Bayes, against 0.962 for the calibrated contamination prior. For RQ2, the struct audit under its
+own generative model covers only 0.665 at nominal 0.90 (0.53 for groups with $<30$ positives). With the true
+hyperparameters the same sampler gives 0.905, so the shortfall comes from empirical-Bayes plug-in estimation.
+
+\begin{table}[t]\centering\small
+\caption{SYNTHETIC: FTS by thinning of the exceptional group, ACC, and 90\% gap-interval coverage and width ($R=300$).}\label{tab:sim}
+\input{tables/simulation}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.86\textwidth]{sim_frontier.png}\\[2pt]
+\includegraphics[width=0.86\textwidth]{semisynthetic_frontier.png}
+\caption{Tolerance-decision frontiers (top-left is ideal). Top: SYNTHETIC design. Bottom: SEMI-SYNTHETIC worlds on the
+real CA design, by deficit structure.}\label{fig:frontiers}
+\end{figure}
+
+\subsection{On the real design: structure of the deficit matters, and calibration does not transfer (E4, SEMI-SYNTHETIC)}
+Table~\ref{tab:semi} gives the results on the real design. Hier declares the 24-positive cell deficit fair in 98--100\% of
+worlds, and its posterior mean for \texttt{2|2|1} is 0.378 against a truth of 0.18. The attribute-structured audit also
+masks the deficit when it is an isolated cell or a pure interaction: its mean is 0.368--0.377, its interval coverage for
+\texttt{2|2|1} is 0.000 and its FTS is 0.23--0.37. When the deficit is a disability main effect shared by all 16 disabled
+groups, every estimator detects it. The calibrated procedure keeps FTS at 0.13--0.28 (higher with thinning), but its ACC
+is 0.32, against 0.83 in calibration. Many tiny groups give some group a chance to escape pooling in most fair worlds.
+
+\begin{table}[t]\centering\small
+\caption{SEMI-SYNTHETIC (real seed-0 validation design, invented TPRs; $R=300$).}\label{tab:semi}
+\resizebox{\textwidth}{!}{\input{tables/semisynthetic}}
+\end{table}
+
+\subsection{Validation-time tolerance claims fail on test (E2, E5)}
+Table~\ref{tab:sel} gives the selection results. Pooled criteria (hier, full Bayes, complete, the calibrated contamination
+rule, and struct in 2 of 5 splits) found a $\lambda$ satisfying $\epsilon=0.10$ on validation. Raw and independent criteria
+never did. \textbf{All 116 pooled claims across splits and thinning levels failed on the test split}, with test
+$\Delta$EOpp from 0.227 to 0.770. Part of this is pooling and part is that thresholds fitted on small validation
+intersections do not transfer: the raw validation gap at $\lambda=1$ is 0.48. Thinning to 10\% raises the mean test gap
+to 0.376--0.410. Utility is within budget: recall is 0.388 at $\lambda=0$ and 0.380 at $\lambda=1$ (the cost is at most
+0.013 in any split). Figure~\ref{fig:tradeoff} shows the trade-off curves.
+
+\begin{table}[t]\centering\small
+\caption{Rule selection on validation, audited on test (intact data, 5 splits).}\label{tab:sel}
+\resizebox{\textwidth}{!}{\input{tables/selection}}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.85\textwidth]{tradeoff_curves.png}
+\caption{Fairness--utility trade-off over $\lambda$ (left) and validation vs test gap (right), mean of 5 splits.}\label{fig:tradeoff}
+\end{figure}
+
+\subsection{Confirmatory tests, refits and out-of-sample test of H1 (RQ4)}
+In the seed-0 bootstrap ($B=1000$), the calibrated procedure and hier plug-in chose the same $\lambda=0.9$ (difference
+exactly 0; Holm $p=1$). Against raw plug-in the test $\Delta$EOpp difference is $-0.052$, 95\% CI $[-0.194,0.051]$, Holm
+$p=0.736$, at a recall cost of $-0.006$ $[-0.0089,-0.0035]$. Across the 5 refits the paired differences change sign
+($-0.016\pm0.039$ vs raw; $+0.009\pm0.035$ vs hier), so neither evaluation nor training uncertainty supports an
+improvement. An earlier seed-0 result (Holm $p=0.04$) does not reproduce. Real-data conclusions are unchanged for
+$\epsilon\in\{0.05,0.10,0.15\}$ and for every prior and $\pi_{\max}$ tested.
+\textbf{Out-of-sample test of H1 on Texas 2018 (decision rule fixed in advance):} pooled criteria made 27 validation-time tolerance claims in 40 pooled selections, and \textbf{all 27 failed on the Texas test split} (test $\Delta$EOpp 0.110--0.888). Raw and independent criteria made none. H1 is therefore supported on a population that played no part in forming it, although one claim failed only narrowly (0.110) and this is a single replication state.
+\input{tables/h1_verdict}
+
+\subsection{Improving the audit: diagnosis, design-matched calibration, held-out certification (H2)}
+\textbf{Diagnosis.} In fair worlds on the CA design, 90.1\% of the false alarms of the invented-design procedure come from
+a max- or min-group with fewer than 10 positives. Only 1.5\% have both extreme groups well supported. The tolerable amount
+of escape from pooling therefore depends on how many tiny groups a design has.
+\textbf{Fix.} (i) \emph{Design-matched calibration:} the preregistered Youden rule chooses the slab (fixed Beta(1,1) or
+centred $\text{Beta}(\mu c,(1-\mu)c)$, $c=2$), $\pi_{\max}$ and the rule on semi-synthetic worlds built from the deployment
+population's validation group sizes, with the deficit at a random group of 10--60 positives. (ii) \emph{Held-out
+certification:} choose $\lambda$ on one half of the validation households and certify on the other half.
+\textbf{Preregistered test.} Hypotheses H2a (J above every established audit by $\ge0.10$), H2b (J above the
+invented-design calibration by $\ge0.10$) and H2c (no false certificate on CA or TX test data) were fixed before running.
+They are evaluated on Texas, whose design played no part in developing the fix, with fresh seeds and the deficit at
+Texas's Black-female-disabled group.
+\textbf{Results.} All three are supported (Table~\ref{tab:v2tx}, Figure~\ref{fig:v2}, Table~\ref{tab:v2real}). On Texas the
+design-matched procedure (centred slab, $\pi\le0.95$, upper 0.5) has $J=0.664$, against 0.385 for the best established
+audit and 0.189 for the invented-design calibration, and false certification 0.168, against 0.615--0.661 for full-Bayes
+and hierarchical pooling. On the California design, which the pilot used, it only ties the pooled audits on $J$ (0.330 vs
+0.333--0.334), with half their false-certification rate (0.348 vs 0.666--0.667). The gain there is in safety, not in $J$.
+The centred slab was chosen for Texas but not for California, so its value is design-dependent. Held-out certification
+made no false claims in either state, against 10 of 10 false claims with same-data certification, at unchanged recall.
+Because no rule in this family is truly fair, the real-data result shows that held-out certification avoids false
+certificates, not that it would certify a fair rule; the semi-synthetic ACC of 0.832 speaks to the latter.
+
+\begin{table}[t]\centering\small
+\caption{Out-of-sample test on the Texas design (SEMI-SYNTHETIC, $R=200$ per cell, keep 1 and 0.5). $J=\text{ACC}-$ mean FTS.}\label{tab:v2tx}
+\resizebox{\textwidth}{!}{\input{tables/v2_scores_TX}}
+\end{table}
+\begin{figure}[t]\centering
+\includegraphics[width=\textwidth]{v2_audit_score.png}
+\caption{Audit score $J$ per procedure. Left: Texas design (out of sample). Right: California design (in-design).}\label{fig:v2}
+\end{figure}
+\begin{table}[t]\centering\small
+\caption{Real data: validation-time tolerance claims of the design-matched procedure (5 household splits per state).}\label{tab:v2real}
+\input{tables/v2_real}
+\end{table}
+
+\section{Discussion}
+\textbf{RQ1.} Pooling masks a disparity when the deficit is confined to a small intersection and is not carried by any
+attribute the model pools through. Exchangeable pooling then hides it almost always, and attribute-structured pooling
+hides it when it is an interaction. Pooling is harmless when the disparity follows a main effect or involves large groups,
+as on real CA data, where the disparity is structural (disability) and huge. The most consequential real-data failure is
+selection-time: pooled criteria certified tolerances on validation that did not hold on test.
+\textbf{RQ2.} Interval coverage degrades with stronger pooling and smaller groups, and empirical-Bayes plug-in intervals
+under-cover even under a correct model. Bayesian credible intervals must not be read as frequentist guarantees.
+\textbf{RQ3.} Upper posterior quantiles did not rescue exchangeable pooling, and the invented-design calibration preferred a
+posterior-mean rule. Under design-matched calibration, however, upper-quantile rules were chosen in both states, and that
+procedure is the best audit out of sample, so posterior uncertainty helps once calibration matches the design. \textbf{RQ4.} No confirmatory difference is robust across bootstrap or refits. The qualitative real-data pattern
+replicates in Texas.
+
+\textbf{Limitations.} The struct audit is a restricted version of~\cite{foulds2020bayes}, not an exact reproduction. The
+synthetic calibration design is not representative of the real design. Binomial audit likelihoods ignore household
+clustering, and the label may contain group-dependent noise~\cite{fogliato2020}. We did not reproduce simultaneous
+frequentist bounds~\cite{cherian2024}. Simulated effects are not facts about California.
+\textbf{Ethics.} The rule almost never reaches disabled people without public coverage. Pooling can erase a small
+group's experience. $\epsilon$ and the capacity were chosen by the analysts, not by the affected communities. No
+configuration here is ``fair''; absence of public coverage must not be read as uninsurance or eligibility.
+
+\section{Conclusion}
+Bayesian pooling makes intersectional audits more stable, but it can make them falsely reassuring exactly where audits
+matter: small intersections whose disadvantage is not explained by any single attribute, and validation-time rule
+selection. Auditors should report raw counts, the pooling pull and $P(\Delta>\epsilon)$ together. They should never
+certify a tolerance from pooled estimates when intersections have fewer than about 30 positives. Our results support two
+concrete practices: calibrate the audit procedure on the design where it will be used (J 0.189 $\to$ 0.664 out of sample),
+and certify on data not used to choose the rule (zero false certificates, against 10 of 10 with same-data certification).
+
+\clearpage
+\input{references}
+
+\appendix
+\section{Reproducibility}
+\textbf{Code and environment.} All analysis is in the executed notebook \nb{}, which runs top to bottom in about
+30 minutes on one CPU core. Environment: Python 3.12 with the packages pinned in \texttt{requirements-lock.txt}
+(numpy 2.5.4, scipy 1.18.1, pandas 3.1.0, scikit-learn 1.9.1, pgmpy 1.1.2, folktables 0.0.12).
+\textbf{Data.} The notebook downloads ACS PUMS 2018 for CA and TX through Folktables. The data are not redistributed.
+\textbf{Determinism.} All seeds are fixed (splits 0--4, bootstrap 7, simulations fixed per section); two consecutive
+full runs produced identical printed outputs.
+\textbf{Commands.}
+\begin{verbatim}
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python -r requirements.txt
+.venv/bin/python -m ipykernel install --sys-prefix --name p8
+.venv/bin/jupyter nbconvert --to notebook --execute --inplace \
+    Problem8_Intersectional_Fairness.ipynb --ExecutePreprocessor.timeout=7200
+\end{verbatim}
+\textbf{Outputs.} \texttt{results/*.csv} (all tables) and \texttt{figures/*.png}. The tables in this paper are generated
+from those CSVs by \texttt{writeup/make\_tables.py}.
+
+\section{Additional tables}
+\begin{landscape}
+{\footnotesize\setlength{\tabcolsep}{3pt}\input{tables/groups}}
+\medskip
+\noindent\textbf{Paired bootstrap, seed 0 ($B=1000$).}\par
+{\footnotesize\input{tables/confirmatory}}
+\end{landscape}
+\end{document}

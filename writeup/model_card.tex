@@ -1,0 +1,275 @@
+\documentclass[10pt]{article}
+\input{preamble}
+
+\title{Model Card\\[2pt]\large Bayesian-network outreach ranking and Bayesian intersectional audit\\
+ACSPublicCoverage, California 2018 (ICT 5143 Capstone, Problem 8)}
+\author{\Authors\\ \small Contact: \texttt{\Contact}}
+\date{Version 1.0 \textperiodcentered{} results from the executed notebook of \nbDate}
+
+\begin{document}
+\maketitle
+
+\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep}{\small
+\textbf{Read first.} $Y=1$ means \emph{no public health coverage} in the ACS person record. It does \textbf{not} mean
+uninsured and it does \textbf{not} mean eligible for any programme. $D=1$ means selection for \emph{hypothetical}
+information outreach. This model is a research artefact for studying fairness audits. It must not be used to make or
+support decisions about real people. All numbers come from \nb{} with fixed seeds. Synthetic and semi-synthetic results
+describe the procedures, not the California population.}}
+
+\section{Model details}
+\begin{itemize}
+  \item \textbf{Developers:} \Authors, ICT 5143 Algorithms, Fairness and Graphical Models Laboratory. Contact: \texttt{\Contact}. Repository: \url{\RepoURL}.
+  \item \textbf{Date and version:} v1.0, \nbDate. Code: \nb{} (self-contained, executed); environment pinned in \texttt{requirements-\allowbreak lock.txt}.
+  \item \textbf{Predictive model:} a discrete Bayesian network with an augmented naive-Bayes structure (Figure~\ref{fig:bn}).
+    $Y$ is a parent of all 18 features, plus the feature edges SCHL$\mid$AGEP, ESR$\mid$AGEP, PINCP$\mid$ESR,
+    DIS$\mid$AGEP, MAR$\mid$AGEP, CIT$\mid$NATIVITY, \{DEAR, DEYE, DREM\}$\mid$DIS and FER$\mid$SEX. ST is constant
+    within one state and is omitted. The CPTs are Dirichlet-smoothed ($\alpha=1$), which makes every entry positive.
+    AGEP and SCHL use fixed bins, and PINCP uses training-split quartiles. \textbf{The graph is associational, not causal.}
+  \item \textbf{Inference:} exact. $P(Y\mid\text{evidence})$ by variable elimination. Our VE under two elimination orders,
+    pgmpy VE, pgmpy clique-tree belief propagation and enumeration agree to $3.3\times10^{-16}$ over 200 random evidence
+    masks. The vectorised predictor equals general VE, and the joint CI $\text{SEX}\perp\{\text{AGEP},\text{DIS}\}\mid Y$
+    holds in the fitted model (\sect{3.1}).
+  \item \textbf{Decision rule:} $D=1$ if the predicted probability is in the top \capacity{} of validation scores
+    (group-unaware, $\lambda=0$). Fairness-adjusted variants $R(\lambda)$ blend the global threshold with group-specific
+    equal-opportunity thresholds: $t_g(\lambda)=(1-\lambda)t_{\text{global}}+\lambda t_g^{\text{EOpp}}+c$, with $c$ set
+    so that exactly \capacity{} of validation records are selected. $\lambda$ is chosen on validation only (\sect{10}).
+  \item \textbf{Baselines:} logistic regression (one-hot categories plus scaled AGEP, SCHL, PINCP) and histogram
+    gradient-boosted trees (300 iterations, learning rate 0.08), with the same information and splits.
+  \item \textbf{Audit models} (for $k_g\sim\text{Bin}(n_g,\theta_g)$, where $n_g$ = positives and $k_g$ = selected positives in
+    intersection $g$): raw $k/n$; independent Beta(1,1); complete pooling; empirical-Bayes beta-binomial (hier); full-Bayes
+    beta-binomial on a grid; the attribute-structured hierarchical logistic audit (struct), with
+    $\operatorname{logit}\theta_g=\beta_0+\beta_{\text{race}}+\beta_{\text{sex}}+\beta_{\text{dis}}+u_g$ and
+    $u_g\sim N(0,\tau^2)$; and the \textbf{proposed} $\epsilon$-contamination prior
+    $\theta_g\sim\pi\,\text{Beta}(a,b)+(1-\pi)\,\text{Beta}(1,1)$ with $\pi\le\pi_{\max}$ (Figure~\ref{fig:audit}).
+    The struct model is a documented restricted version of a hierarchical intersectional audit in the spirit of Foulds et al.
+    It is \emph{not} an exact reproduction of their model.
+  \item \textbf{Calibrated audit procedure (frozen in \sect{9}):} contamination prior with $\pi_{\max}=0.8$ and the
+    plug-in rule ``declare $\Delta\text{EOpp}\le\epsilon$ if the max$-$min of the posterior mean TPRs is $\le\epsilon$''.
+    It was chosen by a preregistered Youden criterion on synthetic data before any real-data selection.
+  \item \textbf{Recommended procedure (\sect{15}):} \emph{design-matched calibration} of the contamination audit (slab type,
+    $\pi_{\max}$ and rule chosen by the same Youden criterion on semi-synthetic worlds built from the deployment population's
+    validation group sizes), plus \emph{held-out certification} (choose $\lambda$ on half of the validation households,
+    certify on the other half). Chosen configurations: CA, fixed slab with $\pi_{\max}=0.99$ and the upper-0.9 rule; TX,
+    centred slab with $\pi_{\max}=0.95$ and the upper-0.5 rule.
+  \item \textbf{Licence:} MIT licence for our code (\texttt{LICENSE}). The data are public-domain ACS PUMS and are not redistributed.
+  \item \textbf{Citation:} S.~Navuda and Aldino. \emph{When does pooling make intersectional fairness audits falsely reassuring?} ICT 5143 capstone report, Problem 8, 2026. \url{\RepoURL}.
+\end{itemize}
+
+\begin{figure}[h]
+  \centering
+  \begin{minipage}{0.52\textwidth}\centering\includegraphics[width=\linewidth]{bn_structure.png}
+    \caption{Predictive BN structure (associational).}\label{fig:bn}\end{minipage}\hfill
+  \begin{minipage}{0.45\textwidth}\centering\includegraphics[width=\linewidth]{audit_model_structure.png}
+    \caption{Proposed audit model (plate over intersections). Hierarchical EB is the case $\pi=1$.}\label{fig:audit}\end{minipage}
+\end{figure}
+
+\section{Intended use}
+\begin{itemize}
+  \item \textbf{Primary use:} a benchmark for studying when Bayesian intersectional fairness audits are reliable, in
+    particular whether partial pooling hides a small disadvantaged intersection and whether validation-time tolerance
+    claims hold on independent data.
+  \item \textbf{Primary users:} fairness auditors, researchers and course staff. The stakeholders named in the problem are
+    low-income residents, public-health outreach teams and community organisations.
+  \item \textbf{Out of scope:} deciding who is contacted, enrolled or denied anything; inferring a person's insurance status or
+    programme eligibility; any causal statement about race, sex or disability; use for another state, year or population
+    without re-validation and re-calibration (\S\ref{sec:caveats}); certifying that a rule is ``fair''.
+\end{itemize}
+
+\section{Factors}
+\begin{itemize}
+  \item \textbf{Protected attributes as recorded:} RAC1P (nine source codes, not collapsed), SEX (1 male, 2 female) and
+    DIS (1 with a disability, 2 without). These are self- or proxy-reported survey categories and limited measurements of
+    identity. Nothing is inferred from names or other variables.
+  \item \textbf{Intersections:} race $\times$ sex $\times$ disability gives 36 cells, of which 35 are non-empty in the seed-0 test
+    split. Two-attribute groupings (race$\times$sex, sex$\times$disability, race$\times$disability) and single attributes
+    are reported as baselines.
+  \item \textbf{Small groups:} cells with fewer than \minSupport{} positives or negatives are flagged exploratory and
+    reported, never dropped. In the seed-0 test split, 14 of the 35 non-empty intersections have fewer than 30 positives,
+    and one (\texttt{7|2|1}) has none.
+  \item \textbf{Use of protected attributes at prediction time:} all three models use RAC1P, SEX and DIS as features, as in
+    the Folktables definition. Rules with $\lambda>0$ also use group-specific thresholds.
+\end{itemize}
+
+\section{Metrics}
+\begin{itemize}
+  \item \textbf{Primary predictive metric:} recall at \capacity{} outreach capacity. Also AUROC, average precision,
+    precision at capacity, log loss, Brier score, per-group expected calibration error and worst-group recall.
+  \item \textbf{Primary fairness metric:} intersectional equality of opportunity,
+    $\Delta\text{EOpp}=\max_g t_g-\min_g t_g$ over intersections with $\ge\minSupport$ positives, with tolerance
+    $\epsilon=\epsTol$ (robustness: 0.05, 0.15). The diagnostics are $\Delta$DP, $\Delta$EOdds, the selection-rate
+    ratio $R_{\text{sel}}$ and the worst-group TPR.
+  \item \textbf{Model-based audit metrics:} posterior intervals for $\Delta$EOpp, $P(\Delta\text{EOpp}>\epsilon\mid\text{data})$,
+    and in simulation the false tolerance-satisfaction rate (FTS = $P$(declared fair $\mid$ truly unfair)), the correct
+    acceptance rate (ACC = $P$(declared fair $\mid$ truly fair)), interval coverage and width.
+  \item \textbf{Uncertainty:} \emph{evaluation} uncertainty from 1,000 household-cluster (Poisson) bootstrap replicates of
+    the seed-0 test split; \emph{training} uncertainty from 5 refits on independent household splits. They are reported separately.
+  \item \textbf{Acceptable utility loss (preregistered):} at most 0.02 recall relative to the unconstrained rule.
+\end{itemize}
+
+\section{Training and evaluation data}
+\begin{itemize}
+  \item \textbf{Source:} US Census Bureau, American Community Survey PUMS 2018 1-Year person file for California, obtained through
+    \texttt{folktables.ACSDataSource(...).get\_data(download=True)}.
+  \item \textbf{Task definition:} Folktables \texttt{ACSPublicCoverage} (\texttt{public\_coverage\_filter}: AGEP $<65$ and
+    PINCP $\le30{,}000$), giving \Nall{} people in \Nhh{} households. Our features are identical, cell by cell, to
+    Folktables' \texttt{df\_to\_numpy} output. Label $Y=1-\mathbb 1[\text{PUBCOV}=1]$ (exact reversal), with prevalence \prev{}.
+  \item \textbf{Splits:} household-disjoint 60/20/20 (train/validation/test) on SERIALNO, five split seeds. Bins, CPTs,
+    thresholds, $\lambda$ and audit hyperparameters use training and validation data only. The test split is used only to
+    audit frozen rules.
+  \item \textbf{Bookkeeping columns, not features:} SERIALNO (splits and clustered bootstrap); PWGTP and PWGTP1--80
+    (survey-weighted estimates, \sect{13}).
+  \item \textbf{Replication population:} Texas 2018 (98,928 people), with identical definitions (\sect{14}).
+\end{itemize}
+
+\section{Quantitative analyses}
+\subsection{Predictive performance and unconstrained-rule fairness}
+\begin{table}[h]\centering\small
+\caption{Test metrics of the unconstrained top-\capacity{} rule, mean $\pm$ sd over 5 household splits.}\label{tab:pred}
+\input{tables/predictive}
+\end{table}
+
+The BN is roughly at the level of logistic regression (AUROC 0.729 vs 0.716). Gradient-boosted trees are best (0.768).
+Predictive accuracy is not the contribution. The BN's worst per-group calibration error (0.110) is larger than LR's
+(0.069) and GBT's (0.063); see Figure~\ref{fig:calib}.
+
+\subsection{Single-attribute vs intersectional audit}
+\begin{table}[h]\centering\small
+\caption{Seed-0 test split, unconstrained rule. Gaps use groups with $\ge$30 relevant observations (adequate/all).}\label{tab:exp1}
+\resizebox{\textwidth}{!}{\input{tables/exp1}}
+\end{table}
+
+\textbf{Aggregate audits hide most of the disparity.} For the BN, $\Delta$EOpp is 0.162 by sex and 0.384 by disability,
+0.468 for sex$\times$disability, and \textbf{0.746 intersectionally}. Every disabled intersection has a TPR of at most
+0.08. Disabled low-income adults mostly \emph{do} have public coverage, so the model ranks them low, and the minority of
+them without coverage would almost never be reached. Survey weighting does not change this. The weighted test TPR is
+0.011 (SE 0.006) for disabled men and 0.031 (0.009) for disabled women, against 0.280 (0.006) and 0.448 (0.006) for men and
+women without a disability (80 successive-difference replicate weights). Texas 2018 replicates the pattern: 0.094 by sex,
+0.390 by disability, 0.432 for sex$\times$disability, 0.888 intersectionally.
+
+\begin{figure}[h]\centering
+\includegraphics[width=\textwidth]{group_calibration.png}
+\caption{Group calibration by sex$\times$disability (test, seed 0).}\label{fig:calib}
+\end{figure}
+
+\subsection{Audit-model behaviour on real counts}
+Table~\ref{tab:groups} (appendix) lists every intersection with its denominators. Pooling moves estimates appreciably only
+for groups with 1--7 positives (pull 0.05--0.14), and no group with $\ge$30 positives moves by more than 0.032
+(Figure~\ref{fig:pull}). On these counts the struct model fits $\hat\tau=0.01$ (its lower bound) and reduces to a
+main-effects logistic model. It gives an implausibly narrow 90\% interval for $\Delta$EOpp, (0.750, 0.757), against
+(0.729, 0.816) for hier. Every audit model gives $P(\Delta\text{EOpp}>0.10\mid\text{data})=1.0$ for the unconstrained rule,
+at every tolerance and prior tested (\sect{12}).
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.72\textwidth]{real_pooling_pull.png}
+\caption{Raw and pooled TPR estimates by intersection size (BN, seed 0, test).}\label{fig:pull}
+\end{figure}
+
+\subsection{Fairness-adjusted rules selected on validation}
+\begin{table}[h]\centering\small
+\caption{Intact training data, 5 household splits. ``Feasible'' = the criterion found a $\lambda$ with value $\le\epsilon$ on
+validation. The test $P(\Delta>\epsilon)$ comes from the calibrated contamination audit on test counts.}\label{tab:sel}
+\resizebox{\textwidth}{!}{\input{tables/selection}}
+\end{table}
+
+\textbf{Every validation-time ``tolerance satisfied'' claim was false on test.} The pooled criteria (hier, full Bayes,
+complete pooling, the calibrated proposed rule, and struct in 2 of 5 splits) found a $\lambda$ meeting $\epsilon=0.10$ on
+validation. Across all splits and thinning levels, all 116 such claims had a test $\Delta$EOpp between 0.227 and 0.770.
+Raw and independent criteria never made the claim. The utility cost of the most fairness-seeking rule ($\lambda=1$) is
+0.008 recall on average (at most 0.013 in any split), within the 0.02 budget. Figure~\ref{fig:tradeoff} shows the
+trade-off curves. In the confirmatory tests, the calibrated rule and hier plug-in chose the same $\lambda$ at seed 0
+($\Delta=0$). Against raw plug-in the difference is $-0.052$, 95\% CI $[-0.194, 0.051]$, Holm $p=0.736$.
+Across the 5 refits the sign of the difference changes (Table~\ref{tab:conf}). Out of sample on Texas 2018 (5 splits), pooled criteria made 27 validation-time tolerance claims and all 27 failed on the Texas test split (test $\Delta$EOpp 0.110--0.888), supporting the falsifiable claim H1 (\sect{14.1}).
+
+\begin{figure}[h]\centering
+\includegraphics[width=0.9\textwidth]{tradeoff_curves.png}
+\caption{Fairness--utility trade-off over $\lambda$ and validation vs test gaps (mean of 5 splits).}\label{fig:tradeoff}
+\end{figure}
+
+\subsection{Audit procedure: simulation evidence (SYNTHETIC and SEMI-SYNTHETIC)}
+\begin{table}[h]\centering\small
+\caption{SYNTHETIC (\sect{8}): 16 groups of 4000 to 8 positives, one 20-positive group 0.20 below the rest, $R=300$, $\epsilon=0.10$.}\label{tab:sim}
+\input{tables/simulation}
+\end{table}
+
+\begin{table}[h]\centering\small
+\caption{SEMI-SYNTHETIC (\sect{9.2}): the real seed-0 validation design (32 groups, 1 to 5,499 positives), invented TPRs.
+The deficit is at \texttt{2|2|1} (Black, female, disabled; 24 positives), thinned to 25\% in the ``keep .25'' columns. $R=300$.}\label{tab:semi}
+\resizebox{\textwidth}{!}{\input{tables/semisynthetic}}
+\end{table}
+
+The calibrated procedure has FTS 0.503 and ACC 0.830 on the synthetic calibration design. On the real design its FTS is
+0.133--0.280, but \textbf{its ACC drops to 0.32}. The calibration is design-specific and must be redone on the deployment
+design. Exchangeable pooling (hier) declares the 24-positive exception ``fair'' in 98--100\% of worlds, and the
+attribute-structured audit masks it whenever the deficit is an interaction. Every estimator detects a deficit carried by
+the disability main effect.
+
+\begin{figure}[h]\centering
+\includegraphics[width=\textwidth]{semisynthetic_frontier.png}
+\caption{SEMI-SYNTHETIC tolerance-decision frontier on the real CA design.}\label{fig:semi}
+\end{figure}
+
+\subsection{Improved procedure: design-matched calibration and held-out certification (\sect{15})}
+Preregistered hypotheses H2a--c were tested out of sample on the Texas design (Table~\ref{tab:v2}, Figure~\ref{fig:v2}).
+The design-matched audit scores $J=\text{ACC}-\text{mean FTS}=0.664$, against at most 0.385 for every established audit
+and 0.189 for the invented-design calibration. Its false-certification rate is 0.168, against 0.615--0.661 for
+hierarchical and full-Bayes pooling (H2a, H2b supported). On the California design, which the pilot used, it only ties
+the pooled audits on $J$ (0.330 vs 0.333--0.334), with half their false-certification rate. Held-out certification made no
+false tolerance claims on real CA or TX data, against 10 of 10 false claims with same-data certification, at unchanged
+recall (Table~\ref{tab:v2real}; H2c supported).
+
+\begin{table}[h]\centering\small
+\caption{Out-of-sample test on the Texas design (SEMI-SYNTHETIC; $R=200$ per cell).}\label{tab:v2}
+\resizebox{\textwidth}{!}{\input{tables/v2_scores_TX}}
+\end{table}
+\begin{figure}[h]\centering
+\includegraphics[width=\textwidth]{v2_audit_score.png}
+\caption{Audit score $J$ per procedure on the Texas (out of sample) and California designs.}\label{fig:v2}
+\end{figure}
+\begin{table}[h]\centering\small
+\caption{Real data: tolerance claims of the design-matched procedure, same-data vs held-out certification.}\label{tab:v2real}
+\input{tables/v2_real}
+\end{table}
+
+\section{Ethical considerations}
+\begin{itemize}
+  \item \textbf{Systematic exclusion of disabled people:} the unconstrained rule almost never selects disabled people
+    without public coverage. Any real outreach built this way would miss them.
+  \item \textbf{Pooling can erase small groups:} a hierarchical audit can report a small disadvantaged intersection as
+    average. Report raw counts and the pooling pull next to every pooled estimate.
+  \item \textbf{Who chooses $\epsilon$ and the capacity:} the analysts chose $\epsilon=\epsTol{}$ and \capacity{}
+    capacity; they were not set by affected communities. No stakeholder input was obtained: no affected community, outreach agency or disability organisation was consulted on $\epsilon$, the capacity or the label. This is a limitation, and both values are reported with sensitivity analyses ($\epsilon\in\{0.05,0.10,0.15\}$).
+  \item \textbf{Label meaning:} absence of public coverage is not uninsurance (people may hold private coverage) and is not
+    eligibility. Mislabelling these concepts could misdirect resources.
+  \item \textbf{Recorded categories:} race and disability categories are survey constructs. Keeping all nine race codes
+    preserves their meaning but creates very small cells.
+\end{itemize}
+
+\section{Caveats and recommendations}\label{sec:caveats}
+\begin{itemize}
+  \item No rule in the family reaches $\Delta$EOpp $\le0.10$ on test; the smallest observed value is 0.227.
+    \textbf{Do not describe any configuration as fair.}
+  \item Do not certify a tolerance from a pooled estimate when any intersection has fewer than about 30 positives.
+    Validation-time claims did not transfer to test.
+  \item Bayesian credible intervals are not frequentist guarantees. The EB struct audit covers 0.665 at nominal 0.90 even
+    under its own model (oracle 0.905), and exchangeable pooling gives near-zero coverage for the gap in simulation.
+  \item Calibrate the audit procedure on the design it will be used on, and certify on data not used to choose the rule.
+    The invented-design calibration lost acceptance (ACC 0.83 $\to$ 0.32), while design-matched calibration reached
+    $J=0.664$ out of sample; same-data certification produced 10 of 10 false claims, held-out certification none.
+  \item Results are for the unweighted benchmark sample unless stated. The survey-weighted estimates cover the
+    sex$\times$disability groups only.
+  \item \textbf{Relation to prior work.} Hierarchical Bayesian estimation of intersectional fairness is not ours (Foulds et al.\ 2020); our \texttt{struct} audit is a restricted version in that spirit, not an exact reproduction. That marginal fairness can hide subgroup unfairness is known (Kearns et al.\ 2018); our interaction-only world is an instance. That fairness constraints met on training data can fail out of sample is known (Cotter et al.\ 2019). Our contribution is the evaluation of pooled \emph{audit criteria} under sparsity and the design-matched, held-out audit protocol, not a new prior or metric.
+\end{itemize}
+
+\clearpage
+\begin{landscape}
+\appendix
+\section{Intersectional audit table}
+{\small\setlength{\tabcolsep}{4pt}\input{tables/groups}}
+\section{Confirmatory and exploratory paired bootstrap (seed 0, $B=1000$)}\label{tab:conf}
+{\small\input{tables/confirmatory}}
+
+\medskip\noindent The confirmatory family (Holm) is the calibrated procedure vs hier plug-in and vs raw plug-in, on test
+$\Delta$EOpp. All other rows are exploratory. Training uncertainty (5 refits): calibrated $-$ raw plug-in
+$=-0.016\pm0.039$ (signs $-+-0-$); calibrated $-$ hier plug-in $=+0.009\pm0.035$ (signs $0++-0$).
+\end{landscape}
+\end{document}

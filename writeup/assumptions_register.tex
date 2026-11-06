@@ -1,0 +1,149 @@
+\documentclass[10pt]{article}
+\input{preamble}
+\geometry{landscape,margin=1.5cm}
+
+% Status badges: edit the colours here.
+\newcommand{\ok}{\colorbox{green!18}{\status{checked}}}
+\newcommand{\partly}{\colorbox{yellow!35}{\status{partly checked}}}
+\newcommand{\viol}{\colorbox{red!20}{\status{violated / limitation}}}
+\newcommand{\valj}{\colorbox{blue!12}{\status{value judgement}}}
+\newcommand{\untested}{\colorbox{gray!20}{\status{untested}}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcommand{\design}{\colorbox{cyan!12}{\status{by design}}}
+
+\title{Assumptions Register\\[2pt]\large ICT 5143 Capstone, Problem 8: reliable intersectional fairness audits (ACSPublicCoverage, CA 2018)}
+\author{\Authors}
+\date{Version 1.0 \textperiodcentered{} evidence from the executed notebook of \nbDate}
+
+\begin{document}
+\maketitle
+
+\noindent Every assumption the analysis relies on is listed with where it is used, how it was checked and the evidence
+from this run. ``Where'' refers to notebook sections. Status:
+\ok{} verified by a test in the notebook; \partly{} some evidence, not conclusive; \viol{} evidence shows it fails or
+limits the conclusions; \untested{} no check was run; \valj{} a normative choice that needs stakeholder justification;
+\design{} true by construction of the code.
+Rows were reviewed against manuscript v1.0 and the literature review; the assumptions the literature raises
+(exchangeable groups, A2; no causal reading of the graph, P1 and E1) are included.
+
+\section*{Key assumptions (the 12 that affect the conclusions)}
+The register has 39 rows. 15 of them are routine: they are verified (7) or true by construction (8). Another 12 are partly
+checked. The 12 below are the ones a reader should weigh: 4 are known to fail, 3 are value judgements and 5 are untested.
+Full details follow in the complete register.
+
+\begin{center}\small
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+ID & Assumption and what the evidence shows & Status \\
+\midrule
+F4 & Validation-fitted thresholds transfer to test: \textbf{all 116 (CA) and 27 (TX) validation-time pooled tolerance claims failed on test} & \viol \\
+A3 & Attribute-structured pooling captures the deficit: it masks interaction-only deficits (FTS 0.23--0.37) & \viol \\
+A4 & Empirical-Bayes plug-in intervals are adequate: struct covers 0.665 at nominal 0.90 (oracle 0.905) & \viol \\
+C1 & The synthetic calibration design is representative: ACC falls from 0.830 to 0.32 on the real design (addressed by design-matched calibration, C5) & \viol \\
+F1 & Equality of opportunity is the right primary criterion for outreach & \valj \\
+F2 & $\epsilon=0.10$, 30\% capacity and a 0.02 utility budget are acceptable to stakeholders & \valj \\
+C2 & Youden's $J$ (equal weight on false certification and false alarm) selects the procedure & \valj \\
+D2 & PUBCOV is reported without group-dependent error & \untested \\
+S3 & The replicate-weight variance formula applies to the test subsample & \untested \\
+P2 & The BN discretisation loses little information & \untested \\
+A1 & Individuals within an intersection are independent (household clustering ignored in the audit likelihood) & \untested \\
+A7 & The $60\times60$ grid represents the full-Bayes hyperposterior & \untested \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\section*{Complete register}
+\small
+\begin{longtable}{@{}p{0.6cm}L{5.2cm}L{1.4cm}L{6.1cm}L{5.6cm}p{2.9cm}@{}}
+\toprule
+ID & Assumption & Where & Check and evidence (this run) & Consequence if violated & Status \\
+\midrule\endfirsthead
+\toprule
+ID & Assumption & Where & Check and evidence (this run) & Consequence if violated & Status \\
+\midrule\endhead
+\bottomrule\endfoot
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{D. Data and measurement}}\\
+D1 & The Folktables \texttt{ACSPublicCoverage} definition (AGEP $<65$, PINCP $\le30{,}000$, 19 features) defines the task population. & \S1 &
+  Features identical cell by cell to \texttt{df\_to\_numpy}; \Nall{} rows in both. & Results would not be comparable with the benchmark literature. & \ok \\
+D2 & $Y=1-\mathbb 1[\text{PUBCOV}=1]$ records \emph{absence of public coverage} as reported in the ACS, without systematic group-dependent misreporting. & \S1 &
+  The exact reversal is verified. Reporting accuracy of PUBCOV is not modelled. & Group-dependent label noise biases TPR gaps (Fogliato et al.). The label does not measure uninsurance or eligibility. & \untested \\
+D3 & Recorded RAC1P, SEX and DIS categories are used as recorded, never collapsed or inferred. & \S1, \S5 &
+  Nine race codes are kept: 36 intersections, 14 of 35 non-empty test cells have $<30$ positives. & Collapsing would hide groups. Keeping codes produces very sparse cells. & \design \\
+D4 & PUMS ``not applicable'' (NaN) is a meaningful category coded 0. & \S1 & Matches the Folktables output exactly. & A different coding would change features for minors and non-workers. & \ok \\
+D5 & The 2018 1-Year PUMS vintage fetched by Folktables is the intended source. & \S1 & Downloaded through \texttt{ACSDataSource}; an offline zip fallback is documented. & Another vintage would change counts. & \ok \\
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{S. Sampling, splitting and estimand}}\\
+S1 & The household (SERIALNO) is the independent sampling unit. & \S2, \S11 &
+  Household-disjoint 60/20/20 splits; the bootstrap resamples households. PUMA geography and survey strata are not modelled. & Uncertainty intervals are too narrow if geographic clustering matters. & \partly \\
+S2 & The primary estimand is the unweighted benchmark sample. & \S1, \S13 &
+  Survey-weighted TPRs with 80 replicate weights for the 4 sex$\times$disability groups agree qualitatively (disabled 0.011, 0.031; non-disabled 0.280, 0.448). & Population statements for intersections would need weighting; only four groups were weighted. & \partly \\
+S3 & Successive-difference replicate variance $\tfrac{4}{80}\sum_r(\hat\theta_r-\hat\theta)^2$ applies, and ratio estimates need no rescaling on the test subsample. & \S13 &
+  Taken from ACS documentation; not compared with published standard errors. & The weighted SEs would be wrong. & \untested \\
+S4 & The test split is not used for fitting, threshold, $\lambda$ or procedure selection. & \S2, \S9, \S10 &
+  By construction: bins, CPTs, thresholds and $\lambda$ use train/validation, and \S9 uses only synthetic data. The analysts did see earlier versions' test results (not a blind analysis). & Optimistic test results. & \design \\
+S5 & Five refits on household splits measure \emph{training} variability; the bootstrap measures \emph{evaluation} variability. & \S10, \S11 &
+  Reported separately. Seeds are not independent population samples. & Conflating them overstates certainty. & \design \\
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{P. Predictive Bayesian network}}\\
+P1 & An augmented naive-Bayes structure is adequate for ranking. It is associational, not causal. & \S3, \S4.1 &
+  AUROC 0.729 $\pm$ 0.004 (LR 0.716, GBT 0.768). The structure was specified, not learned. & Weaker ranking changes who is selected, but not the audit methodology. & \partly \\
+P2 & Fixed bins for AGEP and SCHL and training quartiles for PINCP lose little information. & \S2 & Not tuned; no sensitivity analysis. & Coarse bins may degrade group-specific ranking. & \untested \\
+P3 & Dirichlet $\alpha=1$ smoothing; positivity (all CPT entries $>0$). & \S3, \S3.1 & Normalisation asserted; positivity holds by construction. $\alpha$ is not tuned. & Zero CPT cells would make evidence combinations impossible. & \ok \\
+P4 & Exact inference is implemented correctly. & \S3.1 &
+  VE (two orders) = pgmpy VE = clique-tree BP = enumeration to $3.3\times10^{-16}$; the joint CI SEX $\perp$ \{AGEP, DIS\} $\mid Y$ holds. & Wrong posteriors. & \ok \\
+P5 & Predicted probabilities are adequately calibrated within groups. & \S4.1 &
+  Max group ECE 0.110 for BN vs 0.069 (LR) and 0.063 (GBT). & Matters for probability use; the rule uses only rankings. & \partly \\
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{F. Fairness criterion and decision rule}}\\
+F1 & Equality of opportunity (equal TPR among $Y=1$) is the right primary criterion for a benefit-type outreach decision. & Prereg. &
+  Justified in the problem statement; demographic parity is reported as a secondary audit. & A different criterion could rank rules differently. & \valj \\
+F2 & Capacity \capacity, tolerance $\epsilon=\epsTol$ (robustness 0.05, 0.15) and a 0.02 recall budget are reasonable. & Prereg., \S9.1, \S12 &
+  Chosen by the analysts, not by stakeholders. Real-data conclusions are unchanged for $\epsilon\in\{0.05,0.10,0.15\}$. & Different stakeholders may accept different trade-offs. & \valj \\
+F3 & Empirical $\Delta$EOpp uses groups with $\ge30$ positives; model-based audits use every group with $\ge1$ positive. & \S4, \S6 &
+  Both are reported; exploratory cells are flagged. & The two gaps measure different populations of groups. & \design \\
+F4 & Group thresholds fitted on validation transfer to test. & \S10 &
+  \textbf{All 116 validation-feasible selections had test $\Delta$EOpp of 0.227--0.770 (none $\le0.10$); out of sample on Texas, 27 of 27 (0.110--0.888).} The raw validation gap at $\lambda=1$ is 0.48. & Validation-time fairness claims are false on new data. & \viol \\
+F6 & Half of the validation households suffice both to choose $\lambda$ and to certify the rule (held-out certification). & \S15.4 &
+  Recall unchanged (CA 0.379 vs 0.380; TX 0.350 vs 0.350); no false claims, against 10 of 10 with same-data certification. Whether it would certify a truly fair rule is untested on real data (no rule is fair). & Lost utility, or a procedure that never certifies. & \partly \\
+F5 & Capacity matched exactly on validation implies matched capacity on test. & \S10 & Test selection rates 0.292--0.305. & Small utility comparisons are confounded. & \partly \\
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{A. Hierarchical audit models}}\\
+A1 & Given the frozen rule, $k_g\sim\text{Bin}(n_g,\theta_g)$ with independent individuals within $g$. & \S6 &
+  Household clustering is ignored by the audit likelihoods (the bootstrap respects it). No overdispersion check. & Overdispersion makes posterior intervals too narrow. & \untested \\
+A2 & Group TPRs are exchangeable (hier, full Bayes, contamination prior). & \S6, \S7 &
+  Real TPRs are bimodal by disability (DIS=1 $\le0.08$). PPC $p$ = 0.64--0.85 does not reject, but the range statistic is weak. & Shrinkage toward a grand mean that describes no group. & \partly \\
+A3 & struct: additive race, sex and disability effects on the logit scale plus $N(0,\tau^2)$ interactions. & \S6, \S6.1 &
+  On real counts $\hat\tau=0.01$ (lower bound), so the fit is effectively main effects only. In \S9.2 it masks interaction-only deficits (FTS 0.23--0.37). & An interaction-type disadvantage is shrunk away. & \viol \\
+A4 & Plugging in empirical-Bayes hyperparameters (hier, struct, contamination) is adequate for intervals. & \S6.1, \S8 &
+  struct under its own model: coverage 0.665 $\pm$ 0.014 at nominal 0.90 (oracle with true $\beta,\tau$: 0.905); $\hat\tau$ averages 0.18 vs a true 0.30. hier gap coverage 0.000 in \S8. & Over-confident intervals and false certainty. & \viol \\
+A5 & Pooling bounds ($\kappa\in[0.5,10^4]$, $\tau\in[0.01,10]$, $|\beta|\le20$) do not drive conclusions. & \S6 &
+  The $\tau$ lower bound is active for struct on real data and in 5\% of the \S6.1 fits. One fix (shared $\kappa$ bound for fit, weights and sampling) was verified earlier. & Results at the boundary depend on an arbitrary limit. & \partly \\
+A6 & The contamination slab Beta(1,1) and $\pi\le\pi_{\max}$ are reasonable. & \S9.1, \S12 &
+  Jeffreys slab Beta($\tfrac12,\tfrac12$) behaves alike (mean FTS 0.444 vs 0.427, ACC 0.836 vs 0.819). $\pi_{\max}$ was swept 0.8--0.99. & The decision frontier would shift. & \ok \\
+A7 & The full-Bayes hyperprior ($\mu\sim U(0,1)$, $p(\kappa)\propto(1+\kappa)^{-2}$) is adequately represented on a $60\times60$ grid. & \S6 & Grid resolution not varied. & Posterior approximation error. & \untested \\
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{C. Simulation and calibration}}\\
+C1 & The synthetic calibration design (16 groups, 4000 to 8 positives, base TPR 0.65, $\delta=0.20$) is representative of the deployment design. & \S8, \S9, \S9.2 &
+  \textbf{Out-of-sample check: the calibrated procedure's ACC falls from 0.830 to 0.32 on the real 32-group design} (FTS 0.503 vs 0.133). & The calibrated operating point does not hold where it is used. & \viol \\
+C2 & Youden $J=\text{ACC}-\text{FTS}$, weighting false certification and false alarm equally, is the right selection rule. & \S9 &
+  Preregistered. The winner (robust@0.8 plug-in, $J=0.327$) and runner-up (upper 0.5, $J=0.323$) differ by less than the Monte Carlo error. & Another weighting (e.g.\ penalising FTS more) selects a different procedure. & \valj \\
+C3 & The semi-synthetic worlds (homogeneous $0.38\pm0.015$; deficit 0.20 at \texttt{2|2|1} as a cell, a pure interaction or a disability main effect) are informative scenarios. & \S9.2 &
+  Labelled SEMI-SYNTHETIC. The interaction world equalises every main-effect margin exactly (mean shift 0.016). & They are scenarios, not facts about California. & \design \\
+C5 & Design-matched calibration worlds (homogeneous TPRs plus a 0.20 deficit at a random 10--60-positive group, built from the deployment population's validation sizes) represent the deficits an auditor must catch. & \S15 &
+  Out of sample on TX, with deficit structures not used in calibration (interaction-only, disability main effect, thinning): $J=0.664$ vs $\le0.385$ for established audits. Same generator family for calibration and evaluation. & The calibrated operating point fails for other kinds of deficit. & \partly \\
+C4 & $R=300$ replicates per cell are enough. & \S8, \S9.2 & MC s.e.\ of a rate $\le0.029$. & Near-ties (C2) are not resolved. & \partly \\
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{I. Statistical inference}}\\
+I1 & The household Poisson bootstrap approximates evaluation uncertainty for the fixed seed-0 model. & \S11 & $B=1000$; standard but not validated by simulation. & Wrong CI widths. & \partly \\
+I2 & The confirmatory family is the calibrated procedure vs hier plug-in and vs raw plug-in on test $\Delta$EOpp (Holm); everything else is exploratory. & Prereg., \S11 &
+  The arm follows \S9's choice (plug-in rule); this clarification was recorded before \S10--\S11 were run. Holm $p$ = 1.0 and 0.736. & Selective reporting if the family were changed after seeing results. & \design \\
+I3 & Bayesian credible intervals are not assumed to be frequentist intervals. & \S6.1, \S8, \S9.2 & Coverage is estimated by repeated simulation. & -- & \ok \\
+
+\multicolumn{6}{l}{\cellcolor{gray!10}\textbf{E. Interpretation}}\\
+E1 & No causal reading of BN edges or group differences. & \S3 & No interventions or counterfactuals are computed. & Unsupported causal claims. & \design \\
+E2 & The conclusions generalise beyond CA 2018 only qualitatively. & \S14 &
+  Texas 2018: intersectional $\Delta$EOpp 0.888 vs 0.094 by sex (seed 0), and the H1 test over 5 splits replicates the selection failure (27 of 27 pooled claims fail). Only one replication state and one rule family. & Other populations may differ. & \partly \\
+E3 & $D=1$ is hypothetical outreach; no real person is contacted. & all & By design. & -- & \design \\
+\end{longtable}
+\end{document}

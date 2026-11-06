@@ -1,0 +1,5 @@
+state,proposed,comparator,role,dJ,lo95,hi95,B
+TX,DESIGN-MATCHED (robustc@0.95 · upper0.5),fullbayes · plugin,best established,0.2792,0.235,0.3217,2000
+TX,DESIGN-MATCHED (robustc@0.95 · upper0.5),§9 procedure (robust@0.8 · plugin),§9 calibration,0.475,0.4217,0.525,2000
+CA,DESIGN-MATCHED (robust@0.99 · upper0.9),fullbayes · plugin,best established,-0.0042,-0.0575,0.0458,2000
+CA,DESIGN-MATCHED (robust@0.99 · upper0.9),§9 procedure (robust@0.8 · plugin),§9 calibration,0.13,0.0783,0.1833,2000

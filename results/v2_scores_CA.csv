@@ -1,0 +1,11 @@
+procedure,ACC,cell,dis_main,interaction,meanFTS,J,gap_cov90
+fullbayes · plugin,1.0,0.998,0.0,1.0,0.666,0.334,0.022
+hier · plugin,1.0,1.0,0.0,1.0,0.667,0.333,0.009
+DESIGN-MATCHED (robust@0.99 · upper0.9),0.678,0.508,0.0,0.535,0.348,0.33,0.354
+hier · upper0.9,0.99,0.99,0.0,0.998,0.662,0.328,0.009
+§9 procedure (robust@0.8 · plugin),0.318,0.18,0.0,0.172,0.118,0.2,0.627
+fullbayes · upper0.9,0.422,0.422,0.0,0.512,0.312,0.111,0.022
+struct · plugin,0.31,0.318,0.0,0.335,0.217,0.093,0.012
+struct · upper0.9,0.258,0.258,0.0,0.288,0.182,0.076,0.012
+independent · upper0.9,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+raw · plugin,0.0,0.0,0.0,0.0,0.0,0.0,

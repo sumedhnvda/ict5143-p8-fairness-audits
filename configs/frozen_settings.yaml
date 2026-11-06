@@ -1,0 +1,48 @@
+# Frozen settings of the submitted run. The authoritative values are the notebook §0 constants and the cells cited
+# below; this file mirrors them for reading and is not read by the notebook. Change the notebook, not this file.
+data:
+  source: folktables ACSDataSource(survey_year="2018", horizon="1-Year", survey="person")
+  task: ACSPublicCoverage            # AGEP < 65, PINCP <= 30000, 19 features
+  label: "Y = 1 - 1[PUBCOV == 1]"    # no public coverage
+  core_state: CA
+  replication_states: [TX]
+  protected: [RAC1P, SEX, DIS]       # recorded codes, 9 x 2 x 2 intersections
+split:
+  unit: household (SERIALNO)
+  fractions: [0.6, 0.2, 0.2]         # train / validation / test
+  seeds: [0, 1, 2, 3, 4]
+predictive_model:
+  bn: augmented naive Bayes, Dirichlet alpha = 1, exact variable elimination   # notebook §3 PARENTS
+  baselines: [LogisticRegression (one-hot + scaled numeric), HistGradientBoosting(max_iter=300, learning_rate=0.08, random_state=seed)]
+decision:
+  capacity: 0.30
+  threshold_family: "R(lambda), lambda in 0.0..1.0 step 0.1"   # §10 LAMS
+  thin_groups: ["2|2|1", "2|1|1", "6|2|1"]                      # Black F dis., Black M dis., Asian F dis.
+  thin_levels: [1.0, 0.5, 0.25, 0.10]
+fairness:
+  primary: intersectional dEOpp (max - min TPR)
+  epsilon: 0.10
+  epsilon_grid: [0.05, 0.10, 0.15]
+  min_support: 30                     # positives; smaller groups exploratory
+  utility: recall at capacity, max loss 0.02
+audit:
+  estimators: [raw, independent, complete, hier, fullbayes, struct, robust, robustc]
+  rules: [plugin, upper0.5, upper0.75, upper0.9]
+  default_quantile: 0.90
+  posterior_draws: 2000
+  struct_quadrature_nodes: 201
+  robustc_slab_concentration: 2.0     # SLAB_C
+simulation:
+  replicates_main: 300                # R_SIM (§8)
+  replicates_semisynthetic: 300       # R_SEMI (§9.2)
+  calibration_criterion: "J = ACC - mean FTS, ties -> lower FTS"
+  v2_calibration_grid: {method: [robust, robustc], pi_max: [0.8, 0.9, 0.95, 0.99], rule: [plugin, upper0.5, upper0.75, upper0.9]}
+  v2_calibration_replicates: 200
+  v2_evaluation: {replicates: 200, seed: 777, worlds: [homogeneous, cell, interaction, dis_main], keep: [1.0, 0.5], target: "2|2|1"}
+uncertainty:
+  bootstrap: household-cluster Poisson(1), B = 1000, paired
+  multiple_comparisons: Holm over 2 confirmatory comparisons
+  dJ_interval: paired bootstrap over simulated worlds within (world, keep), B = 2000, seed 20261106   # writeup/make_tables.py
+inference_check:
+  tolerance: 1.0e-9
+  evidence_masks: 200

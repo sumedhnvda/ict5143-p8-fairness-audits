@@ -1,0 +1,107 @@
+Saved trace from the executed notebook (Problem8_Intersectional_Fairness.ipynb, run of 25 October 2026, runtime 29.3 min).
+Copied verbatim from the saved cell outputs, for offline fallback during the demonstration.
+
+====================================================================================================
+§3.1 exact-inference check (notebook cell 14)
+====================================================================================================
+max |posterior difference| (own VE x2 orders, pgmpy VE, clique tree, enumeration): 3.33e-16
+vectorised predictor == general VE on the full BN
+joint CI SEX ⟂ {AGEP, DIS} | Y verified in fitted model; positivity holds (Dirichlet smoothing => all CPT entries > 0)
+
+====================================================================================================
+§14.1 H1 test on Texas (cell 61)
+====================================================================================================
+                   val_claim   lam  test_dEOpp  test_recall  test_sel_rate
+criterion                                                                 
+complete_plugin          1.0  0.20       0.790        0.356          0.305
+fullbayes_upper          1.0  1.00       0.246        0.349          0.303
+hier_plugin              1.0  0.98       0.238        0.350          0.304
+hier_upper               1.0  1.00       0.246        0.349          0.303
+independent_upper        0.0  0.86       0.338        0.351          0.304
+proposed_plugin          1.0  0.98       0.238        0.350          0.304
+proposed_upper           0.0  0.98       0.238        0.350          0.304
+raw_plugin               0.0  0.92       0.271        0.349          0.302
+struct_plugin            0.2  0.98       0.238        0.350          0.304
+struct_upper             0.2  0.98       0.238        0.350          0.304
+
+pooled validation-time claims 'ΔEOpp ≤ 0.1': 27 of 40 pooled selections
+claims with test ΔEOpp > 0.1: 27 (1.000); test ΔEOpp of claims: 0.110..0.888
+claims by non-pooled criteria (raw, independent): 0
+H1 verdict on Texas 2018: SUPPORTED
+
+====================================================================================================
+§15.3 design-matched audit on fresh worlds (cell 66)
+====================================================================================================
+
+CA design (in-design: used for the pilot), R=200 per cell, keep 1 and 0.5:
+                                           ACC   cell  interaction  dis_main  meanFTS      J  gap_cov90
+procedure                                                                                              
+fullbayes · plugin                       1.000  0.998        1.000       0.0    0.666  0.334      0.022
+hier · plugin                            1.000  1.000        1.000       0.0    0.667  0.333      0.009
+DESIGN-MATCHED (robust@0.99 · upper0.9)  0.678  0.508        0.535       0.0    0.348  0.330      0.354
+hier · upper0.9                          0.990  0.990        0.998       0.0    0.662  0.328      0.009
+§9 procedure (robust@0.8 · plugin)       0.318  0.180        0.172       0.0    0.118  0.200      0.627
+fullbayes · upper0.9                     0.422  0.422        0.512       0.0    0.312  0.111      0.022
+struct · plugin                          0.310  0.318        0.335       0.0    0.217  0.093      0.012
+struct · upper0.9                        0.258  0.258        0.288       0.0    0.182  0.076      0.012
+independent · upper0.9                   0.000  0.000        0.000       0.0    0.000  0.000      0.000
+raw · plugin                             0.000  0.000        0.000       0.0    0.000  0.000        NaN
+
+TX design (OUT OF SAMPLE), R=200 per cell, keep 1 and 0.5:
+                                            ACC   cell  interaction  dis_main  meanFTS      J  gap_cov90
+procedure                                                                                               
+DESIGN-MATCHED (robustc@0.95 · upper0.5)  0.832  0.255        0.250       0.0    0.168  0.664      0.615
+fullbayes · plugin                        1.000  0.920        0.925       0.0    0.615  0.385      0.174
+hier · upper0.9                           0.985  0.930        0.945       0.0    0.625  0.360      0.013
+hier · plugin                             1.000  0.990        0.992       0.0    0.661  0.339      0.013
+fullbayes · upper0.9                      0.290  0.110        0.145       0.0    0.085  0.205      0.174
+§9 procedure (robust@0.8 · plugin)        0.218  0.048        0.038       0.0    0.028  0.189      0.506
+struct · plugin                           0.108  0.125        0.095       0.0    0.073  0.034      0.037
+struct · upper0.9                         0.090  0.105        0.078       0.0    0.061  0.029      0.037
+independent · upper0.9                    0.000  0.000        0.000       0.0    0.000  0.000      0.000
+raw · plugin                              0.000  0.000        0.000       0.0    0.000  0.000        NaN
+evaluation: 532s
+
+TX: J(design-matched) = 0.664; best established J = 0.385 (fullbayes · plugin); J(§9 procedure) = 0.189
+H2a (beats every established audit by ≥ 0.10): SUPPORTED;  H2b (beats the §9 calibration by ≥ 0.10): SUPPORTED
+
+====================================================================================================
+§15.4 same-data vs held-out certification (cell 68)
+====================================================================================================
+state  seed certification  lam  val_claim  test_dEOpp  test_recall
+   CA     0     same-data  1.0       True       0.357        0.374
+   CA     0      held-out  1.0      False       0.383        0.375
+   CA     1     same-data  1.0       True       0.341        0.382
+   CA     1      held-out  0.9      False       0.349        0.379
+   CA     2     same-data  1.0       True       0.338        0.377
+   CA     2      held-out  0.9      False       0.308        0.377
+   CA     3     same-data  1.0       True       0.326        0.384
+   CA     3      held-out  0.9      False       0.410        0.380
+   CA     4     same-data  1.0       True       0.472        0.384
+   CA     4      held-out  1.0      False       0.306        0.385
+   TX     0     same-data  1.0       True       0.285        0.360
+   TX     0      held-out  1.0      False       0.315        0.359
+   TX     1     same-data  0.9       True       0.216        0.350
+   TX     1      held-out  0.9      False       0.242        0.347
+   TX     2     same-data  1.0       True       0.247        0.346
+   TX     2      held-out  1.0      False       0.263        0.339
+   TX     3     same-data  1.0       True       0.110        0.354
+   TX     3      held-out  1.0      False       0.192        0.356
+   TX     4     same-data  1.0       True       0.329        0.342
+   TX     4      held-out  0.9      False       0.323        0.350
+CA, held-out certification: 0 tolerance claims in 5 splits; 0 failed on test; mean test ΔEOpp 0.351, recall 0.379
+CA, same-data certification: 5 tolerance claims in 5 splits; 5 failed on test; mean test ΔEOpp 0.367, recall 0.380
+TX, held-out certification: 0 tolerance claims in 5 splits; 0 failed on test; mean test ΔEOpp 0.267, recall 0.350
+TX, same-data certification: 5 tolerance claims in 5 splits; 5 failed on test; mean test ΔEOpp 0.238, recall 0.350
+H2c (held-out certification: no tolerance claim fails on test): SUPPORTED  [0 held-out claims made]
+
+====================================================================================================
+Live demo: python writeup/make_tables.py (about 15 s; deterministic, seed 20261106)
+====================================================================================================
+state                                 proposed                         comparator             role     dJ   lo95  hi95    B
+   TX DESIGN-MATCHED (robustc@0.95 · upper0.5)                 fullbayes · plugin best established  0.279  0.235 0.322 2000
+   TX DESIGN-MATCHED (robustc@0.95 · upper0.5) §9 procedure (robust@0.8 · plugin)   §9 calibration  0.475  0.422 0.525 2000
+   CA  DESIGN-MATCHED (robust@0.99 · upper0.9)                 fullbayes · plugin best established -0.004 -0.057 0.046 2000
+   CA  DESIGN-MATCHED (robust@0.99 · upper0.9) §9 procedure (robust@0.8 · plugin)   §9 calibration  0.130  0.078 0.183 2000
+tables: ['confirmatory.tex', 'exp1.tex', 'groups.tex', 'h1_verdict.tex', 'predictive.tex', 'selection.tex', 'semisynthetic.tex', 'simulation.tex', 'v2_paired_J.tex', 'v2_real.tex', 'v2_scores_CA.tex', 'v2_scores_TX.tex'] 
+figures: ['audit_model_structure.png', 'bn_structure.png', 'group_calibration.png', 'real_pooling_pull.png', 'semisynthetic_frontier.png', 'sim_frontier.png', 'tradeoff_curves.png', 'v2_audit_score.png']

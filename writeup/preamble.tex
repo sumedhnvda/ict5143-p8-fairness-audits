@@ -1,0 +1,35 @@
+% Shared preamble for model_card.tex and assumptions_register.tex
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[margin=2cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs,longtable,tabularx,array,multirow}
+\usepackage[table]{xcolor}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{pdflscape}
+
+\graphicspath{{figures/}}
+\setlist{itemsep=2pt,topsep=3pt}
+\captionsetup{font=small,labelfont=bf}
+\renewcommand{\arraystretch}{1.15}
+
+% ---- editing helpers -------------------------------------------------------
+% \TODO{...} marks text the students still have to write or confirm (renders red in the PDF).
+\newcommand{\TODO}[1]{\textcolor{red!75!black}{\textbf{[TODO:} #1\textbf{]}}}
+% Single source for facts that appear in both documents; edit here, not in the text.
+\newcommand{\Nall}{138{,}554}
+\newcommand{\Nhh}{85{,}182}
+\newcommand{\prev}{0.631}
+\newcommand{\capacity}{30\%}
+\newcommand{\epsTol}{0.10}
+\newcommand{\minSupport}{30}
+\newcommand{\nbDate}{25 October 2026}
+\input{team}   % names, roll numbers, contact, repository (shared with report/ and slides/)
+\newcommand{\nb}{\texttt{Problem8\_\allowbreak Intersectional\_\allowbreak Fairness.ipynb}}
+\newcommand{\sect}[1]{notebook~\S#1}
+\newcommand{\status}[1]{\textsf{\small #1}}

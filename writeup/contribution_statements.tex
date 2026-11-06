@@ -1,0 +1,87 @@
+\documentclass[11pt]{article}
+\input{preamble}
+\title{Individual Contribution Statements\\[2pt]\large ICT 5143 Capstone, Problem 8}
+\date{\nbDate}
+\author{\Authors}
+
+\begin{document}\sloppy
+\maketitle
+\noindent The work was divided by pipeline stage. \StudentA{} led the question, literature, data, predictive Bayesian
+network, exact inference and the Texas test of H1. \StudentB{} led the Bayesian audit models, the simulations, threshold
+selection, uncertainty analysis and the improved audit procedure (H2). Each student reviewed the other's stages and can
+explain the whole pipeline. Section numbers refer to \nb{}.
+
+\section*{Contribution table}
+\small
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{4.0cm}>{\raggedright\arraybackslash}p{1.6cm}>{\raggedright\arraybackslash}p{1.6cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{4.3cm}@{}}
+\toprule
+Work item & Lead & Reviewer & Artefact & What the reviewer verified\\
+\midrule\endhead
+Research question, preregistration ($\epsilon$, capacity, utility budget, confirmatory family) & \StudentA & \StudentB & notebook top cells, \nolinkurl{docs/proposal.md} & confirmatory family matches \S11 Holm family\\
+Literature review (19 papers), comparison table, narrowed claim, H1 & \StudentA & \StudentB & \nolinkurl{writeup/literature_review.tex} & closest-work rows against the struct and contamination audits\\
+Data acquisition, label reversal, data card, household split & \StudentA & \StudentB & \S1--\S2 & no SERIALNO in two splits; label is exactly $1-$PUBCOV$_{=1}$\\
+Predictive BN, VE, clique-tree check, LR/GBT baselines & \StudentA & \StudentB & \S3--\S4.1 & VE vs clique tree $3.3\times10^{-16}$; CI check\\
+Experiment 1 (single vs intersectional) & \StudentA & \StudentB & \S5, \nolinkurl{exp1_*.csv} & 21 of 35 test groups with $\ge30$ positives\\
+Audit models: EB, full Bayes, struct, contamination prior; verification & \StudentB & \StudentA & \S6, \S6.1 & beta-binomial posterior mean by hand; quadrature and gradient checks\\
+Experiments 3 and 4, calibration, semi-synthetic worlds, robustness & \StudentB & \StudentA & \S7--\S9.2, \S12 & frozen \S9 rule reused unchanged in \S9.2\\
+Experiments 2 and 5, bootstrap, Holm, survey weights & \StudentB & \StudentA & \S10, \S11, \S13 & Holm $p$ recomputed (0.368 $\to$ 0.736)\\
+Texas replication and H1 test & \StudentA & \StudentB & \S14, \nolinkurl{h1_texas_test.csv} & decision rule fixed before the run; 27/27 count\\
+Improved audit (design-matched calibration, held-out certification), H2 & \StudentB & \StudentA & \S15, \nolinkurl{v2_*.csv} & $J$ recomputed from \nolinkurl{v2_eval_*.csv}; paired CI\\
+Manuscript, report, slides & both & both & \nolinkurl{writeup/}, \nolinkurl{report/}, \nolinkurl{slides/} & every number traced to \nolinkurl{results/}\\
+Model card, assumptions register & \StudentB & \StudentA & \nolinkurl{writeup/} & statuses match notebook evidence\\
+README, repository, reproducibility & \StudentA & \StudentB & \texttt{README.md}, \nolinkurl{docs/} & setup commands and manifest\\
+\bottomrule
+\end{longtable}
+\normalsize
+
+\section*{\StudentA{} (\RollA)}
+\begin{description}[leftmargin=4.2cm,style=nextline]
+  \item[Research design] Research question, preregistration table (30\% capacity, $\epsilon=0.10$, recall budget 0.02,
+    confirmatory family) and the falsifiable contribution H1 with its Texas decision rule (\S14.1).
+  \item[Literature review] 19 papers, the landscape comparison table and gap verification; narrowed the claim to an
+    evaluation after finding that hierarchical intersectional estimation (Foulds et al.) and contamination priors
+    (Berger and Berliner) already exist.
+  \item[Data and predictive BN] Folktables acquisition and checks, data card, household-disjoint splits, discretisation,
+    the factor and variable-elimination code, the BN, the inference verification against pgmpy and the LR/GBT baselines.
+  \item[Experiments] Experiment 1; Texas replication and the H1 test (27 of 27 pooled claims failed on test).
+  \item[Writing] Manuscript introduction, data and model sections; literature review; report sections 1--2 and
+    reproducibility; slides 1--5; README and repository.
+  \item[Technical decision] Splitting by household (SERIALNO) rather than by person, so that people who share
+    circumstances never appear on both sides of a split.
+  \item[Difficulty or failure] The earlier draft claim (the contamination prior halves false certification) failed:
+    0.503 against the required 0.490. We kept the failure on record, narrowed the claim, and tested H1 out of sample.
+  \item[Cross-check of \StudentB's work] Recomputed the beta-binomial posterior mean by hand ($k=2$, $n=10$, $\mu=0.4$,
+    $\kappa=90$ gives 0.38), recomputed the Holm adjustment, and recomputed $J$ and its paired interval from
+    \nolinkurl{results/v2_eval_*.csv}.
+  \item[Tools and assistance] Python (numpy, scipy, pandas, pgmpy, folktables), Jupyter, LaTeX. An AI coding assistant
+    (Claude Code) helped draft code, LaTeX and documentation; I checked every reported number against the saved notebook
+    outputs in \nolinkurl{results/}.
+  \item[Signature and date] \rule{6cm}{0.4pt}
+\end{description}
+
+\section*{\StudentB{} (\RollB)}
+\begin{description}[leftmargin=4.2cm,style=nextline]
+  \item[Audit models] Beta\nobreakdash-binomial empirical Bayes, the full-Bayes grid posterior, the attribute-structured audit
+    (\texttt{struct}: marginal likelihood by adaptive quadrature with an exact gradient) and the contamination prior;
+    their numerical and coverage checks (\S6.1).
+  \item[Experiments] Experiment 3 on real counts; Experiment 4 (synthetic and semi-synthetic worlds) and the
+    preregistered calibration (\S9); Experiments 2 and 5 (threshold family, minority thinning, selection); the household
+    bootstrap with Holm correction; survey-weighted estimates; robustness grids.
+  \item[Improved procedure] Diagnosis of the false alarms (90\% come from groups with fewer than 10 positives),
+    design-matched calibration, held-out certification and the H2a--c tests (\S15).
+  \item[Writing] Manuscript audit, experiment and improvement sections; model card; assumptions register; report
+    sections 3--5; slides 6--10.
+  \item[Technical decision] Ranking audit procedures by $J=\text{ACC}-\text{FTS}$ fixed before calibration, so that a
+    procedure cannot win by never certifying (score 0) or always certifying (score 0).
+  \item[Difficulty or failure] The calibration chosen on invented group sizes did not transfer to the real design: fair
+    worlds were accepted 83\% of the time on the invented design and only 32--33\% on the California design. This
+    motivated calibrating on the target design.
+  \item[Cross-check of \StudentA's work] Checked that no household appears in two splits, that the label is the exact
+    reversal of the Folktables label, that VE, pgmpy VE and the clique tree agree with enumeration, and the group
+    denominators of Experiment 1.
+  \item[Tools and assistance] Python (numpy, scipy, pandas), Jupyter, LaTeX. An AI coding assistant (Claude Code)
+    helped draft code, LaTeX and documentation; I checked every reported number against the saved notebook outputs in
+    \nolinkurl{results/}.
+  \item[Signature and date] \rule{6cm}{0.4pt}
+\end{description}
+\end{document}
