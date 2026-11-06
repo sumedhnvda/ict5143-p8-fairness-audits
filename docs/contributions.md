@@ -1,6 +1,6 @@
 # Contributions
 
-Team: **Sumedh Navuda** (Student 1) and **Aldino** (Student 2). Signed statements:
+Team 5: **Sumedh Navuda** (Student 1, 261090830007) and **Aldino** (Student 2, 261090830006). Signed statements:
 [`writeup/contribution_statements.pdf`](../writeup/contribution_statements.pdf). The work was divided by pipeline stage.
 Each student reviewed the other's stages and can explain the whole pipeline. Commit count is not a measure of
 contribution.

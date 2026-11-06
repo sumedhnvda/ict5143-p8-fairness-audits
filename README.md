@@ -1,7 +1,8 @@
 # When does pooling make intersectional fairness audits falsely reassuring?
 
 **ICT 5143 Algorithms, Fairness and Graphical Models Laboratory: Capstone, Problem 8 (Reliable intersectional fairness
-audits).** Team: **Sumedh Navuda** ([roll no.]) and **Aldino** ([roll no.]). Contact: sumedhnavuda@outlook.com.
+audits).** Team 5: **Sumedh Navuda** (261090830007, sumedh.mitmpl2026@learner.manipal.edu) and **Aldino**
+(261090830006, aldino.mitmpl2026@learner.manipal.edu).
 
 | | |
 |---|---|
@@ -10,6 +11,11 @@ audits).** Team: **Sumedh Navuda** ([roll no.]) and **Aldino** ([roll no.]). Con
 | Executed notebook (all code) | [`Problem8_Intersectional_Fairness.ipynb`](Problem8_Intersectional_Fairness.ipynb) |
 | Full manuscript | [`writeup/manuscript.pdf`](writeup/manuscript.pdf) |
 | Requirement matrix | [`docs/requirements_matrix.md`](docs/requirements_matrix.md) |
+
+We built this repository so that anyone can check every number in our report. The 3-page report stands on its own:
+it shows our model diagram, equations, closest work, results table and intervals. As the AFGML report template asks,
+it then points to this repository for the full evidence: the 19-paper comparison, the requirement matrix, the
+contribution table and the machine-readable results.
 
 ## 1. Task
 - **Data:** ACS PUMS 2018 1-Year, Folktables `ACSPublicCoverage`; California (core, 138,554 people in 85,182
@@ -20,14 +26,15 @@ audits).** Team: **Sumedh Navuda** ([roll no.]) and **Aldino** ([roll no.]). Con
 - **Protected attributes:** recorded race (9 codes) × sex × disability, giving 36 intersections.
 
 ## 2. Question and contribution
-**Question.** When does hierarchical pooling stabilise intersectional TPR estimates, and when does it mask a harmful
+**Our question.** When does hierarchical pooling stabilise intersectional TPR estimates, and when does it mask a harmful
 small-group disparity, so that an audit wrongly reports `ΔEOpp ≤ ε`?
 
 **Closest work.** Foulds et al. (SDM 2020), hierarchical Bayesian intersectional fairness; Herlihy et al. (FAccT 2024),
-structured regression for small subgroups. Our `struct` audit is a restricted version, not an exact reproduction. The
-ε-contamination prior is classical (Berger & Berliner 1986). We claim **no new prior and no new metric**.
+structured regression for small subgroups. Our `struct` audit is a restricted version of the first, not an exact
+reproduction. The ε-contamination prior is classical (Berger & Berliner 1986). We claim **no new prior and no new
+metric**.
 
-**Contribution.**
+**What we contribute.**
 1. *Evaluation (H1):* when a group-threshold rule is chosen on validation and a pooled audit certifies `ΔEOpp ≤ 0.10`,
    the frozen rule fails on test in more than half of cases.
 2. *Audit protocol (H2):* design-matched calibration plus held-out certification beats every established audit
@@ -48,7 +55,7 @@ structured regression for small subgroups. Our `struct` audit is a restricted ve
 - **Utility:** recall at capacity, with at most 0.02 loss.
 - **Protected attributes at prediction time:** yes. They are BN features, and they set the thresholds for λ > 0.
 
-## 4. Headline results (all numbers from `results/`)
+## 4. What we found (all numbers from `results/`)
 | Finding | Estimate |
 |---|---|
 | Intersections expose hidden disparity (same decisions, seed 0) | ΔEOpp 0.162 by sex → **0.746** over race × sex × disability (21 of 35 groups with ≥ 30 positives) |
@@ -66,7 +73,7 @@ uv pip install --python .venv/bin/python -r requirements-lock.txt   # exact vers
 #   (requirements.txt = loose minimum versions)
 .venv/bin/python -m ipykernel install --sys-prefix --name p8
 ```
-Run on Linux (Fedora) with Python 3.12.13 on one CPU core; no GPU is used (peak memory was not profiled). The ACS data (about 435 MB)
+We ran it on Linux (Fedora) with Python 3.12.13 on one CPU core. No GPU is used, and we did not profile peak memory. The ACS data (about 435 MB)
 download automatically into `data/` on first run and are **not** redistributed; see [`data/README.md`](data/README.md).
 No credentials are needed.
 
@@ -80,7 +87,7 @@ No credentials are needed.
 # documents (needs tectonic or a LaTeX installation)
 (cd writeup && ./build.sh); (cd report && tectonic -X compile AFGML_Report.tex); (cd slides && tectonic -X compile AFGML_Presentation.tex)
 ```
-All seeds are fixed. Settings are the notebook §0 constants, mirrored in
+We fixed all seeds. Settings are the notebook §0 constants, mirrored in
 [`configs/frozen_settings.yaml`](configs/frozen_settings.yaml). Every artefact and its command are listed in
 [`results/manifest.csv`](results/manifest.csv). For a short demonstration, see [`demo/README.md`](demo/README.md).
 
@@ -97,17 +104,18 @@ All seeds are fixed. Settings are the notebook §0 constants, mirrored in
 | `writeup/` | LaTeX manuscript, literature review, model card, assumptions register, contribution statements |
 | `report/`, `slides/` | 3-page evaluation report and Beamer deck (source + PDF) |
 
-There are no `src/`, `scripts/` or `tests/` directories, by design. All code lives in the single self-contained
+We have no `src/`, `scripts/` or `tests/` directories, by design. All our code lives in the single self-contained
 notebook, and its correctness checks are 11 `assert` statements inside it (inference agreement, factor shapes,
 normalisation, conditional independence, quadrature and gradient, truth labels, data equality). See the N/A note in
 the requirement matrix.
 
 ## 8. Contributions and attribution
+We split the work by pipeline stage, and each of us can explain the whole project:
 - **Sumedh Navuda:** question and preregistration, literature review, data and household splits, BN and exact
   inference, Experiment 1, Texas replication and H1.
 - **Aldino:** audit models and their verification, simulations and calibration, threshold selection, bootstrap and Holm,
   design-matched / held-out audit (H2).
 
-Each student cross-checked the other's work ([`docs/contributions.md`](docs/contributions.md)). Data: U.S. Census Bureau
-ACS PUMS via Folktables (Ding et al., NeurIPS 2021). An AI coding assistant (Claude Code) helped draft code and
-documents; every reported number was checked against the saved outputs. Code licence: MIT ([`LICENSE`](LICENSE)).
+Each of us cross-checked the other's work ([`docs/contributions.md`](docs/contributions.md)). Data: U.S. Census Bureau
+ACS PUMS via Folktables (Ding et al., NeurIPS 2021). We used an AI coding assistant (Claude Code) to help
+draft code and documents, and we checked every reported number against the saved outputs. Code licence: MIT ([`LICENSE`](LICENSE)).

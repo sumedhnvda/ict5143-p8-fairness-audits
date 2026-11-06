@@ -1,17 +1,24 @@
 \documentclass[11pt,a4paper]{article}
 \usepackage[margin=0.78in]{geometry}
 \usepackage[T1]{fontenc}
-\usepackage{lmodern,amsmath,amssymb,booktabs,tabularx,xcolor}
+\usepackage{lmodern,amsmath,amssymb,booktabs,tabularx,xcolor,array}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xurl}
 \usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit}
+\usepackage[compact,small]{titlesec}
+\titlespacing*{\section}{0pt}{6pt}{2pt}
+\usepackage{caption,multicol}
+\captionsetup{font=small,labelfont=bf,skip=2pt}
 \setlist{nosep,leftmargin=*}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{4pt}
+\setlength{\parskip}{3pt}
 \newif\ifguidance
 \guidancefalse
 \newcommand{\help}[1]{\ifguidance{\small\color{blue!55!black}\textit{Writing guide: #1}\par}\fi}
 \newcommand{\fillin}[1]{\textnormal{[\textit{#1}]}}
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
 \input{../writeup/team}
 \newcommand{\ProjectTitle}{When Does Pooling Make Intersectional Fairness Audits Falsely Reassuring?}
 \begin{document}\sloppy
@@ -20,76 +27,106 @@
 ICT 5143: Algorithms Fairness and Graphical Models Laboratory\\
 Problem 8 (Reliable intersectional fairness audits); Team \TeamID\\
 \StudentA{} (\RollA); \StudentB{} (\RollB)\\
-{\small Repository: \url{\RepoURL}; contact: \texttt{\Contact}\\
-Submission tag: \texttt{\SubmitTag}; Date: 6 November 2026}
+{\small \texttt{\EmailA}; \texttt{\EmailB}\\
+Repository: \url{\RepoURL}\\
+Submission commit: \texttt{\SubmitCommit}; Date: 6 November 2026}
 \end{center}
 \begin{abstract}
 We ask when Bayesian pooling makes an intersectional equal-opportunity audit report ``gap $\le0.10$'' for an
-outreach rule that is unfair. A discrete Bayesian network ranks ACSPublicCoverage adults (California 2018); audits
-estimate race$\times$sex$\times$disability TPRs. Pooled audits hide isolated small-group deficits, and all 116 California
-and 27 Texas validation-time tolerance claims failed on test. Calibrating the audit on the target population's group
-sizes and certifying on held-out households raised the audit score on fresh Texas simulations by $+0.279$
-(95\% CI $[0.235,0.322]$). Limitation: on California it only ties the best pooled audit.
+outreach rule that is unfair. A discrete Bayesian network ranks ACSPublicCoverage adults (California 2018), and the
+audits estimate race$\times$sex$\times$disability TPRs. Pooled audits hid isolated small-group deficits, and all 116
+California and 27 Texas validation-time tolerance claims failed on test. Calibrating the audit on the target
+population's group sizes and certifying on held-out households raised the audit score on fresh Texas simulations by
+$+0.279$ (95\% CI $[0.235,0.322]$). Limitation: on California it only ties the best pooled audit.
 \end{abstract}
 
 \section{Question, context and contribution}
-An agency with capacity for 30\% of a list sends \emph{hypothetical} information outreach ($D=1$) to people ranked
-most likely to lack public coverage ($Y=1$: no public coverage in the ACS record; this is neither uninsurance nor
-programme eligibility). The people affected are those who lack coverage but are never contacted, often in small
-intersections such as disabled Black women. The auditor must say whether reach is equal across groups.
+An agency that can contact 30\% of a list sends \emph{hypothetical} information outreach ($D=1$) to the people ranked
+most likely to have no public coverage ($Y=1$, the ACS record; this is neither uninsurance nor eligibility). Those harmed
+are people without coverage who are never contacted, often in small intersections such as disabled Black women.
 \textbf{Research question:} when does hierarchical pooling stabilise intersectional TPR estimates, and when does it
 mask a harmful small-group disparity, so that a tolerance claim $\Delta\text{EOpp}\le\epsilon$ is false?\\
 \textbf{Contribution:} pooled audit criteria used to choose a group-threshold rule on validation data make tolerance
 claims that fail on test in more than half of cases (H1; refuted if at most half fail on Texas). Design-matched
-calibration with held-out certification improves the audit score $J$ by at least 0.10 over every established audit
+calibration with held-out certification raises the audit score $J$ by at least 0.10 over every established audit
 (H2; refuted if not).\\
 \textbf{Closest work:} hierarchical Bayesian intersectional fairness~\cite{foulds2020bayes} and structured regression
-for small subgroups~\cite{herlihy2024}. Our \texttt{struct} audit is a restricted version of the former, and we do not
-claim an exact reproduction. The contamination prior is classical~\cite{berger1986}, so we claim an evaluation and an
-audit protocol, not a new prior. The 19-paper comparison is in \texttt{writeup/literature\_review.pdf}.
+for small subgroups~\cite{herlihy2024} pool sparse groups, and Bayesian~\cite{ji2020}, variance-corrected~\cite{lum2022}
+and simultaneous-bootstrap~\cite{cherian2024} audits quantify uncertainty. None reports how often a pooled audit falsely
+certifies a gap tolerance when one small intersection is harmed, or when the audit is used to choose the rule. That
+marginal fairness can hide subgroup harm~\cite{kearns2018} and that fairness constraints can fail out of
+sample~\cite{cotter2019} is known. Our \texttt{struct} audit is a restricted version of~\cite{foulds2020bayes}, not an
+exact reproduction, and the contamination prior is classical~\cite{berger1986}. We therefore claim an evaluation and an
+audit protocol, not a new prior or metric. The full 19-paper comparison is in the repository.
 
 \section{Data, graphical model and fairness method}
-\textbf{Data and estimand:} ACS PUMS 2018 1-year person file via Folktables ACSPublicCoverage~\cite{ding2021}
-(AGEP\,$<$\,65, PINCP\,$\le$\,30{,}000): 138{,}554 Californians in 85{,}182 households, prevalence $P(Y{=}1)=0.631$.
-Label $Y=1-\mathbf{1}[\text{PUBCOV}=1]$. Protected attributes are the recorded race (9 codes), sex and disability.
-Their 36 intersections are the audit groups. Splits are 60/20/20 \emph{by household} (SERIALNO) over 5 seeds. The
-estimand is the unweighted benchmark sample; survey weights are a robustness check. Texas 2018 (98{,}928) is the
-replication population.\\
-\textbf{Graph and inference:} an augmented naive-Bayes network (associational, not causal). $Y$ is a parent of all 18
-features, with ten feature edges (e.g.\ DIS$\mid$AGEP, PINCP$\mid$ESR) and Dirichlet $\alpha=1$ CPTs. The audit is a
-second graphical model over group counts: $k_g$ selected positives out of $n_g$ positives.
-\begin{gather*}
-p(y,\mathbf{x})=p(y)\prod_{j}p(x_j\mid\operatorname{pa}(x_j)),\qquad s(\mathbf{x})=P(Y{=}1\mid\mathbf{x})\ \text{(variable elimination)},\\
-k_g\mid\theta_g\sim\text{Bin}(n_g,\theta_g),\qquad \theta_g\sim\pi\,\text{Beta}(a,b)+(1-\pi)\,\text{Beta}\big(\mu c,(1-\mu)c\big),\quad \pi\le\pi_{\max}.
-\end{gather*}
-Comparators replace the prior on $\theta_g$: none (raw), independent Beta(1,1), complete pooling, exchangeable
-Beta$(a,b)$ by empirical Bayes or a full-Bayes grid, and \texttt{struct}:
-$\operatorname{logit}\theta_g=\beta_0+\beta_{\text{race}}+\beta_{\text{sex}}+\beta_{\text{dis}}+u_g$,
+\textbf{Data and estimand:} ACS PUMS 2018 1-year via Folktables ACSPublicCoverage~\cite{ding2021} (AGEP\,$<$\,65,
+PINCP\,$\le$\,30{,}000): 138{,}554 Californians in 85{,}182 households, $P(Y{=}1)=0.631$, with
+$Y=1-\mathbf{1}[\text{PUBCOV}=1]$. Protected attributes are recorded race (9 codes), sex and disability, giving 36
+intersections; only 21 of 35 observed test groups have $\ge30$ positives. Splits: 60/20/20 \emph{by household}, 5 seeds;
+estimand: the unweighted sample; replication: Texas 2018 (98{,}928).\\
+\textbf{Graph and inference} (Figure~\ref{fig:model}): the predictor is an augmented naive-Bayes network
+(associational, not causal) with Dirichlet $\alpha=1$ CPTs, queried by exact variable elimination. The audit is a
+second graphical model over group counts.
+\begin{figure}[t]\centering
+\begin{tikzpicture}[font=\scriptsize, n/.style={draw,circle,inner sep=1pt,minimum size=7.5mm},
+  o/.style={n,fill=gray!20}, a/.style={-{Stealth[length=1.6mm]}}]
+\node[o,fill=orange!35] (Y) at (0,0) {$Y$};
+\foreach \x/\l [count=\i] in {-4.0/AGEP,-3.0/SCHL,-2.0/ESR,-1.0/PINCP,0/DIS,1.0/DEAR,2.0/SEX,3.0/FER,4.0/CIT}
+  \node[o] (f\i) at (\x,-1.2) {\tiny\l};
+\foreach \i in {1,...,9} \draw[a,gray!70] (Y) -- (f\i);
+\draw[a] (f1.south) to[out=-50,in=-130] (f2.south);
+\draw[a] (f1.south) to[out=-55,in=-125] (f3.south);
+\draw[a] (f1.south) to[out=-60,in=-120] (f5.south);
+\draw[a] (f3.south) to[out=-50,in=-130] (f4.south);
+\draw[a] (f5.south) to[out=-50,in=-130] (f6.south);
+\draw[a] (f7.south) to[out=-50,in=-130] (f8.south);
+\node[font=\tiny,align=center,text width=8.6cm] at (0,-3.05) {not drawn: MAR, DEYE, DREM, RAC1P, MIG, MIL, ANC, NATIVITY, ESP
+  (all children of $Y$), and the edges MAR$\mid$AGEP, DEYE$\mid$DIS, DREM$\mid$DIS, CIT$\mid$NATIVITY};
+\begin{scope}[xshift=7.4cm]
+\node[n,minimum size=9mm] (h) at (0.6,0.1) {\tiny$\pi,a,b,\mu$};
+\node[n] (t) at (0,-1.2) {$\theta_g$};
+\node[o] (k) at (0,-2.3) {$k_g$};
+\node[o] (nn) at (1.2,-2.3) {$n_g$};
+\draw[a] (h) -- (t); \draw[a] (t) -- (k); \draw[a] (nn) -- (k);
+\node[draw,rounded corners,fit=(t)(k)(nn),inner sep=3pt] (pl) {};
+\node[font=\tiny,anchor=north] at (pl.south) {plate $g=1,\dots,36$};
+\end{scope}
+\end{tikzpicture}
+\caption{Left: predictive BN; grey arrows $Y\to$ feature, black arrows the feature edges; shaded nodes are observed.
+Right: audit model, with $k_g$ of the $n_g$ positives in group $g$ selected.}\label{fig:model}
+\end{figure}
+\vspace{-8pt}\begin{gather*}
+p(y,\mathbf{x})=p(y)\textstyle\prod_{j}p(x_j\mid\operatorname{pa}(x_j)),\qquad s(\mathbf{x})=P(Y{=}1\mid\mathbf{x})\ \text{(variable elimination)};\\
+k_g\sim\text{Bin}(n_g,\theta_g),\qquad \theta_g\sim\pi\,\text{Beta}(a,b)+(1-\pi)\,\text{Beta}\big(\mu c,(1-\mu)c\big),\quad\pi\le\pi_{\max}.
+\end{gather*}\vspace{-2pt}
+The comparators replace this prior with: none (raw); independent Beta(1,1); complete pooling; exchangeable Beta$(a,b)$
+by empirical Bayes or a full-Bayes grid; and \texttt{struct}, which is
+$\operatorname{logit}\theta_g=\beta_0+\beta_{\text{race}}+\beta_{\text{sex}}+\beta_{\text{dis}}+u_g$ with
 $u_g\sim N(0,\tau^2)$, fitted by quadrature.\\
-\textbf{Method and fairness:} the primary criterion is intersectional equal opportunity,
-$\Delta\text{EOpp}=\max_g\text{TPR}_g-\min_g\text{TPR}_g$, with $\epsilon=0.10$. It fits outreach because the harm
-is missing people who need it. Diagnostics are $\Delta$DP, $\Delta$EOdds, selection-rate ratio, worst-group recall and
-group calibration. Utility is recall at 30\% capacity, with at most 0.02 loss allowed. A rule family $R(\lambda)$
-blends a global and group-specific thresholds, so $A$ is used at prediction time for $\lambda>0$ (the scores also use
-$A$). An audit certifies when its plug-in or upper-$q$ posterior gap is $\le\epsilon$. \textbf{Proposed:} choose the
-pooling cap $\pi_{\max}$, slab and rule to maximise $J=\text{ACC}-\overline{\text{FTS}}$ on semi-synthetic worlds
-built on the \emph{target} state's validation group sizes. Then choose $\lambda$ on half of the validation households
-and certify on the other half.
+\textbf{Method and fairness:} the primary criterion is $\Delta\text{EOpp}=\max_g\text{TPR}_g-\min_g\text{TPR}_g$ with
+$\epsilon=0.10$, because the harm is missing people who need outreach. Diagnostics: $\Delta$DP, $\Delta$EOdds, selection
+ratio, worst-group recall, group calibration. Utility is recall at 30\% capacity, with at most 0.02
+loss. A rule family $R(\lambda)$ blends global and group thresholds, so $A$ is used at prediction time (by the scores,
+and by the thresholds for $\lambda>0$). An audit certifies when its plug-in or upper-$q$ posterior gap is $\le\epsilon$.
+\textbf{Proposed:} choose $\pi_{\max}$, the slab and the rule by maximising $J=\text{ACC}-\overline{\text{FTS}}$ on
+semi-synthetic worlds built on the \emph{target} state's validation group sizes. Then choose $\lambda$ on one half of
+the validation households and certify on the other half.
 
 \section{Evaluation protocol}
-Baselines are logistic regression and gradient boosting (predictive), the BN with no uncertainty-aware selection
-(graphical), and the raw, independent, exchangeable, complete and \texttt{struct} audits (fairness). All audits see
-the same counts, and all rules share the capacity matched on validation. Discretisation edges and CPTs are fitted on
-training; $\lambda$ and thresholds are chosen on validation; test is used only to evaluate frozen rules. Audit
-procedures are ranked by $J$ on simulated worlds with known truth: homogeneous (fair) worlds and three unfair worlds
-with a 0.20 TPR deficit in an isolated cell, a margin-balanced interaction or a disability main effect, at full and
-half support. Fresh simulation seeds are used for evaluation. Five household splits; household-cluster Poisson
-bootstrap (B\,=\,1000) for real paired gaps, with Holm correction over the two preregistered comparisons. $\Delta J$
-uses a paired bootstrap over simulated worlds (B\,=\,2000, 200 worlds per cell). Exact VE is checked against pgmpy
-VE, clique-tree propagation and enumeration (tolerance $10^{-9}$).
+Baselines: logistic regression and gradient boosting (predictive); the BN without uncertainty-aware selection
+(graphical); raw, independent, exchangeable, complete and \texttt{struct} audits (fairness). All audits see the same
+counts and all rules the same validation-matched capacity. Training fits edges and CPTs, validation fits $\lambda$ and
+thresholds, and test only evaluates frozen rules. Audits are scored on simulated worlds with known truth: fair worlds,
+and worlds with a 0.20 TPR deficit in an isolated cell, a margin-balanced interaction or a disability main effect, at
+full and half support; calibration and evaluation use different seeds. Real comparisons use five household splits and
+a household-cluster Poisson bootstrap (B\,=\,1000) with Holm correction over the two preregistered comparisons;
+$\Delta J$ uses a paired bootstrap over simulated worlds (B\,=\,2000). Exact VE matches pgmpy VE, clique-tree
+propagation and enumeration to $3.3\times10^{-16}$ (tolerance $10^{-9}$). All five mandatory experiments, the
+ablations and the robustness tests (priors, prevalence, $\epsilon$, thinning, second state) were run.
 
 \section{Results and interpretation}
-\begin{center}\small
+\vspace{-2pt}\begin{center}\small
 \begin{tabularx}{\linewidth}{Xcccc}
 \toprule
 Audit procedure (fresh Texas worlds, 200 per cell) & ACC (fair, $\uparrow$) & mean FTS ($\downarrow$) & $J$ ($\uparrow$) & 90\% gap coverage\\
@@ -97,7 +134,7 @@ Audit procedure (fresh Texas worlds, 200 per cell) & ACC (fair, $\uparrow$) & me
 Closest baseline: full-Bayes beta-binomial, plug-in & 1.000 & 0.615 & 0.385 & 0.174\\
 Hierarchical EB, upper 0.9 & 0.985 & 0.625 & 0.360 & 0.013\\
 \texttt{struct} (Foulds-style), plug-in & 0.108 & 0.073 & 0.034 & 0.037\\
-Ablation: no design matching (\S9 calibration) & 0.218 & 0.028 & 0.189 & 0.506\\
+Ablation: no design matching & 0.218 & 0.028 & 0.189 & 0.506\\
 \textbf{Proposed: design-matched contamination audit} & 0.832 & 0.168 & \textbf{0.664} & 0.615\\
 \midrule
 Real CA+TX, 10 splits & \multicolumn{2}{c}{claims / false claims} & test recall & test $\Delta$EOpp\\
@@ -106,49 +143,51 @@ Ablation: same-data certification & \multicolumn{2}{c}{10 / 10} & 0.365 & 0.302\
 \bottomrule
 \end{tabularx}
 \end{center}
-{\small \textbf{Table note:} ACC is the share of fair worlds certified, and FTS the share of unfair worlds certified
-(false tolerance satisfaction), averaged over three deficit types and two support levels at $\epsilon=0.10$.
-Paired $\Delta J$ (proposed minus baseline) is $+0.279$ [0.235, 0.322] against full Bayes and $+0.475$ [0.422, 0.525]
-against the ablation. On the California pilot design it is $-0.004$ [$-0.057$, 0.046], a tie. Predictive quality is
-shared by all audits: the BN has AUROC $0.729\pm0.004$, log loss 0.577 and Brier 0.196 (GBT: 0.768, 0.541, 0.182).}
+{\small \textbf{Table note:} ACC/FTS = share of fair/unfair worlds certified ($\epsilon=0.10$; FTS averaged over 3
+deficit types $\times$ 2 support levels). Paired $\Delta J$, proposed minus baseline: $+0.279$ [0.235, 0.322] vs full
+Bayes, $+0.475$ [0.422, 0.525] vs the ablation, $-0.004$ [$-0.057$, 0.046] on the CA design (tie). Shared predictor
+quality: BN AUROC $0.729\pm0.004$, log loss 0.577, Brier 0.196 (GBT 0.768, 0.541, 0.182).}
 
-\textbf{Main finding:} pooling helps when deficits are carried by large groups or main effects, and it masks them
-when they are isolated. On real data the BN rule's disparity is structural, and every audit gives
-$P(\Delta\text{EOpp}>0.10)=1$. The gap grows from 0.162 by sex to 0.746 over the 21 supported intersections (35
-observed). On synthetic worlds, EB with the upper-0.9 rule falsely certified 98\% of worlds with one 20-positive group
-0.20 below the rest. In selection, all 116 California and 27/27 Texas pooled validation claims failed on test (test
-gap 0.110--0.888), so \textbf{H1 is supported}. The proposed audit raises $J$ on Texas by more than 0.10 over every
-established audit and over the ablation (\textbf{H2a, H2b supported}). Held-out certification withheld all 10 false
-claims at unchanged recall (\textbf{H2c}).\\
-\textbf{Mechanism and failure:} removing design matching drops fair-world acceptance from 0.83 on invented sizes to
-0.22 on Texas. 90\% of false alarms come from extreme groups with fewer than 10 positives, so the calibration must
-see the real group sizes. Failures: on California the method trades lower FTS (0.348 vs 0.666) for lower ACC (0.678),
-which leaves $J$ unchanged. No rule in the family is fair on test (minimum test gap 0.227). The preregistered
-real-gap comparison is inconclusive ($-0.052$ [$-0.194$, 0.051], Holm $p=0.736$). The \texttt{struct} intervals
-under-cover (0.665 at nominal 0.90; oracle 0.905). Groups with fewer than 30 positives are exploratory.
+\textbf{Main finding:} pooling helps when a deficit sits in large groups or a main effect and masks it when the
+deficit is isolated. For fixed BN decisions the gap is 0.162 by sex and 0.746 over the 21 supported intersections;
+this disparity is structural, so every audit gives $P(\Delta\text{EOpp}>0.10)=1$. On synthetic worlds EB upper-0.9
+falsely certified 98\% of worlds with one 20-positive group 0.20 below the rest. All 116 CA and 27/27 TX pooled
+validation claims failed on test (gap 0.110--0.888): \textbf{H1 supported}. The proposed audit beats every established
+audit and the ablation by $>0.10$ in $J$, and held-out certification withheld all 10 false claims at unchanged recall
+(\textbf{H2a--c supported}).\\
+\textbf{Mechanism and failure:} without design matching, fair-world acceptance drops from 0.83 (invented sizes) to
+0.22 (Texas); 90\% of false alarms come from groups with $<10$ positives. On California the method trades lower FTS
+(0.348 vs 0.666) for lower ACC (0.678), so $J$ ties. No rule is fair on test (min gap 0.227); the preregistered
+real-gap comparison is inconclusive ($-0.052$ [$-0.194$, 0.051], Holm $p=0.736$); \texttt{struct} under-covers (0.665
+at nominal 0.90). Groups with $<30$ positives are exploratory.
 
 \section{Limitations, ethics and conclusion}
-The ACS facts are the counts, gaps and failed claims. The $J$ gains are simulation evidence from one generator family
-on real group sizes. Race and disability are survey constructs, and the label is not need, so a model trained on it
-can misdirect resources. Zero held-out claims shows abstention, not sensitivity to rules that really are fair. No
-stakeholders set $\epsilon$ or the capacity. \textbf{Conclusion:} a pooled ``gap $\le\epsilon$'' should not be
-trusted for sparse intersections unless the audit was calibrated on that design and certified on households not used
-to choose the rule. Next experiment: a generator family not used in calibration, and a constructed fair rule to
-measure held-out sensitivity.
+Real-data facts are the counts, gaps and failed claims; the $J$ gains are simulation evidence from one generator
+family on real group sizes. Race and disability are survey constructs, and the label is not need, so the
+model can misdirect resources. Zero held-out claims shows abstention, not sensitivity to rules that really are fair.
+No stakeholders set $\epsilon$ or the capacity. \textbf{Conclusion:} do not trust a pooled ``gap $\le\epsilon$'' for
+sparse intersections unless the audit was calibrated on that design and certified on households not used to choose
+the rule. Next experiment: an unseen generator family, plus a constructed fair rule to measure held-out sensitivity.
 
 \section*{Reproducibility and individual contributions}
-\textbf{Reproduce:} \texttt{jupyter nbconvert -{}-to notebook -{}-execute -{}-inplace} \texttt{Problem8\_\allowbreak Intersectional\_\allowbreak Fairness.ipynb}
-(about 30 min on 1 CPU core; Python 3.12, \nolinkurl{requirements-lock.txt}), then \texttt{python writeup/make\_tables.py}
-for the $\Delta J$ intervals. Config: notebook \S0 constants, mirrored in \nolinkurl{configs/frozen_settings.yaml}.\\
-\textbf{\StudentA:} question and preregistration, 19-paper review, data and household splits, BN and VE/clique-tree
-verification, Experiment 1, Texas H1 test. Cross-checked the audit posteriors, Holm and $J$ intervals.\\
+\textbf{Reproduce:} \texttt{jupyter nbconvert -{}-to notebook -{}-execute -{}-inplace}
+\texttt{Problem8\_\allowbreak Intersectional\_\allowbreak Fairness.ipynb} (about 30 min on 1 CPU core; Python 3.12,
+\nolinkurl{requirements-lock.txt}), then \texttt{python writeup/make\_tables.py} for the $\Delta J$ intervals. Config:
+notebook \S0 constants, mirrored in \nolinkurl{configs/frozen_settings.yaml}.\\
+\textbf{\StudentA:} question, preregistration, literature, data and splits, BN and exact-inference checks,
+Experiment 1, Texas H1 test; cross-checked the audit posteriors, Holm and $J$ intervals.
 \textbf{\StudentB:} audit models and coverage checks, simulations and calibration, threshold selection, bootstrap,
-the design-matched/held-out procedure (H2). Cross-checked split disjointness, label reversal and inference agreement.\\
+the design-matched/held-out procedure (H2); cross-checked splits, label reversal and inference agreement.\\
 \textbf{Evidence:} \texttt{docs/requirements\_matrix.md}, \texttt{docs/contributions.md}, \texttt{results/}.
-\begin{thebibliography}{9}\small
-\bibitem{foulds2020bayes} J.~R. Foulds, R.~Islam, K.~N. Keya, S.~Pan. Bayesian modeling of intersectional fairness: the variance of bias. \emph{Proc.\ SIAM SDM}, 424--432, 2020. doi:10.1137/1.9781611976236.48.
-\bibitem{herlihy2024} C.~Herlihy, K.~Truong, A.~Chouldechova, M.~Dud\'ik. A structured regression approach for evaluating model performance across intersectional subgroups. \emph{Proc.\ ACM FAccT}, 2024. arXiv:2401.14893.
+\begin{thebibliography}{9}\footnotesize\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}
+\bibitem{foulds2020bayes} J.~R. Foulds, R.~Islam, K.~N. Keya, S.~Pan. Bayesian modeling of intersectional fairness: the variance of bias. \emph{Proc.\ SIAM SDM}, 424--432, 2020.
+\bibitem{herlihy2024} C.~Herlihy, K.~Truong, A.~Chouldechova, M.~Dud\'ik. A structured regression approach for evaluating model performance across intersectional subgroups. \emph{Proc.\ ACM FAccT}, 2024.
+\bibitem{ji2020} D.~Ji, P.~Smyth, M.~Steyvers. Can I trust my fairness metric? Assessing fairness with unlabeled data and Bayesian inference. \emph{NeurIPS 33}, 2020.
+\bibitem{lum2022} K.~Lum, Y.~Zhang, A.~Bower. De-biasing ``bias'' measurement. \emph{Proc.\ ACM FAccT}, 379--389, 2022.
+\bibitem{cherian2024} J.~J. Cherian, E.~J. Cand\`es. Statistical inference for fairness auditing. \emph{JMLR} 25(149):1--49, 2024.
+\bibitem{kearns2018} M.~Kearns, S.~Neel, A.~Roth, Z.~S. Wu. Preventing fairness gerrymandering: auditing and learning for subgroup fairness. \emph{Proc.\ ICML}, 2564--2572, 2018.
+\bibitem{cotter2019} A.~Cotter et al. Training well-generalizing classifiers for fairness metrics and other data-dependent constraints. \emph{Proc.\ ICML}, 1397--1405, 2019.
 \bibitem{berger1986} J.~O. Berger, L.~M. Berliner. Robust Bayes and empirical Bayes analysis with $\epsilon$-contaminated priors. \emph{Ann.\ Statist.} 14(2):461--486, 1986.
-\bibitem{ding2021} F.~Ding, M.~Hardt, J.~Miller, L.~Schmidt. Retiring Adult: new datasets for fair machine learning. \emph{NeurIPS 34}, 6478--6490, 2021. Data: U.S.\ Census Bureau ACS PUMS 2018 1-year, via \url{https://github.com/socialfoundations/folktables}, accessed October 2026.
+\bibitem{ding2021} F.~Ding, M.~Hardt, J.~Miller, L.~Schmidt. Retiring Adult: new datasets for fair machine learning. \emph{NeurIPS 34}, 2021. Data: U.S.\ Census Bureau ACS PUMS 2018 1-year via Folktables, accessed October 2026.
 \end{thebibliography}
 \end{document}

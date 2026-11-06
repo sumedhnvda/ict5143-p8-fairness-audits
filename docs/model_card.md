@@ -1,7 +1,7 @@
 # Model card (summary)
 
 The full card is [`writeup/model_card.pdf`](../writeup/model_card.pdf) (source `writeup/model_card.tex`). Developers:
-Sumedh Navuda and Aldino (contact sumedhnavuda@outlook.com). Licence: MIT (code).
+Sumedh Navuda and Aldino (contact sumedh.mitmpl2026@learner.manipal.edu, aldino.mitmpl2026@learner.manipal.edu). Licence: MIT (code).
 
 | Field | Summary |
 |---|---|
